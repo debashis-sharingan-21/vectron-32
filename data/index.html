@@ -16,54 +16,82 @@
 
       <header class="lf-head">
         <div class="lf-logo">
-          <canvas id="tri-logo" width="34" height="34" aria-hidden="true"></canvas>
+          <div class="tri" aria-hidden="true"></div>
           <div>
-            <div class="lf-title">VECTRON-32</div>
+            <div class="lf-title-text">VECTRON-32</div>
             <div class="lf-sub">INSTRUMENTATION &bull; SCADA TELEMETRY</div>
           </div>
         </div>
         <div class="lf-indicators">
-          <div class="ind"><i class="led led-red"></i><span>ARMED</span></div>
-          <div class="ind"><i class="led led-amber"></i><span>ESP32-WROOM-32</span></div>
-          <div class="ind"><i class="led led-green"></i><span>115200 BAUD</span></div>
+          <div class="ind"><i class="led" id="led-lock"></i><span>LOCKOUT</span></div>
+          <div class="ind"><i class="led" id="led-auth"></i><span>AUTH</span></div>
+          <div class="ind"><i class="led on" id="led-link"></i><span>LINK</span></div>
         </div>
       </header>
 
-      <div class="lf-body">
-        <div class="lf-hud">
-          <canvas id="tunnel" aria-hidden="true"></canvas>
-          <canvas id="skull" aria-hidden="true"></canvas>
-          <div class="hud-crosshair top-left"></div>
-          <div class="hud-crosshair top-right"></div>
-          <div class="hud-crosshair btm-left"></div>
-          <div class="hud-crosshair btm-right"></div>
+      <div class="lf-split">
+        <!-- Left: Form Panel -->
+        <div class="lf-form-panel">
+          <div class="lf-panel-header">VECTRON-32 INSTRUMENTATION SYSTEM</div>
+          <form class="lf-form" id="login-form" autocomplete="off" novalidate>
+            <div class="prompt">vectron@esp32:~$ <span>authenticate --operator</span></div>
+
+            <label class="lf-field">
+              <span class="lf-label">OPERATOR // USERNAME</span>
+              <div class="lf-box">
+                <input type="text" id="in-user" name="user" spellcheck="false" autofocus required maxlength="63" placeholder="demo" value="demo"/>
+              </div>
+            </label>
+
+            <label class="lf-field">
+              <span class="lf-label">PASSKEY // CIPHER</span>
+              <div class="lf-box">
+                <input type="password" id="in-pass" name="pass" spellcheck="false" required maxlength="63" placeholder="demo" value="demo"/>
+              </div>
+            </label>
+
+            <div class="lf-readout">
+              <span class="readout-tag">SYS-STAT:</span>
+              <span class="readout-val">CHANNEL: 6 | BAUD: 115200 | AUTH: SHA-256 + RTC</span>
+            </div>
+
+            <div class="lf-actions">
+              <button type="submit" class="lf-btn" id="btn-login">
+                <span class="btn-text">[ AUTHENTICATE ]</span>
+              </button>
+            </div>
+          </form>
         </div>
 
-        <form class="lf-form" id="login-form" autocomplete="off" novalidate>
-          <div class="prompt">vectron@esp32:~$ <span>authenticate --operator</span></div>
-
-          <label class="field">
-            <span class="field-lbl">OPERATOR // USERNAME</span>
-            <div class="field-box">
-              <input type="text" id="lf-user" name="user" spellcheck="false" autofocus required maxlength="63" placeholder="callsign"/>
-            </div>
-          </label>
-
-          <label class="field">
-            <span class="field-lbl">CIPHER // PASSPHRASE</span>
-            <div class="field-box">
-              <input type="password" id="lf-pass" name="pass" spellcheck="false" required maxlength="63" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"/>
-            </div>
-          </label>
-
-          <div class="lf-actions">
-            <button type="submit" class="btn btn-primary" id="lf-btn">
-              <span class="btn-scan"></span>
-              <span class="btn-text">[ ACCESS SYSTEM ]</span>
-            </button>
-            <div class="lf-status" id="lf-status" aria-live="polite">STANDBY // READY</div>
+        <!-- Right: 3D Canvas Box -->
+        <div class="lf-canvas-box">
+          <div class="canvas-header">
+            <span>OPTICAL MATRIX RETICLE</span>
+            <span class="ch-sub">3D WIREFRAME + SPECTRAL CORE</span>
           </div>
-        </form>
+          <div class="canvas-wrapper">
+            <canvas id="login-canvas" width="340" height="260"></canvas>
+            <div class="hud-crosshair top-left"></div>
+            <div class="hud-crosshair top-right"></div>
+            <div class="hud-crosshair btm-left"></div>
+            <div class="hud-crosshair btm-right"></div>
+          </div>
+          <div class="canvas-footer">
+            <span>SYS_CLEARANCE: LEVEL_4</span>
+            <span>VECTOR_SYNC: 60FPS</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Terminal Log Strip at bottom -->
+      <div class="lf-terminal-strip">
+        <div class="term-strip-header">
+          <span>TERMINAL ACTIVITY LOG</span>
+          <span id="lf-host">192.168.4.1</span>
+        </div>
+        <ul class="lf-terminal-log" id="login-log">
+          <!-- Populated by logSet() -->
+        </ul>
       </div>
 
       <footer class="lf-foot">
@@ -75,16 +103,17 @@
 
   <!-- ===================== SCREEN: ACCESS GRANTED ===================== -->
   <section id="screen-granted" class="screen">
-    <div class="ag-wrap">
-      <div class="ag-box">
-        <div class="ag-header">
-          <span class="ag-badge">CLEARANCE VERIFIED</span>
-          <span class="ag-code">SEC-ID: 0x7E3F</span>
-        </div>
-        <div class="ag-main">ACCESS GRANTED</div>
-        <div class="ag-sub">VECTRON-32 &bull; INSTRUMENTATION CONSOLE</div>
-        <div class="ag-noise" id="ag-noise" aria-hidden="true"></div>
-      </div>
+    <div class="ag-grid"></div>
+    <div class="ag-frame">
+      <div class="c tl"></div><div class="c tr"></div>
+      <div class="c bl"></div><div class="c br"></div>
+      <div class="ag-badge">CLEARANCE VERIFIED // SEC-ID: 0x7E3F</div>
+      <h1 class="ag-text">
+        <span>ACCESS</span>
+        <span>GRANTED</span>
+      </h1>
+      <div class="ag-sub">VECTRON-32 &bull; INSTRUMENTATION CONSOLE</div>
+      <pre class="ag-noise" id="ag-noise" aria-hidden="true"></pre>
     </div>
   </section>
 

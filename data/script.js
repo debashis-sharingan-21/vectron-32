@@ -96,29 +96,15 @@ async function show(name) {
   next.classList.add('active');
   document.body.dataset.screen = name;
   current = next;
-  window.scrollTo(0, 0);
   login.active = (name === 'login');
   if (name === 'login') login.startFx();
+  else login.stopFx();
   if (name === 'dash' || name === 'dashboard') dashboard.onEnter();
 }
 
 // ============================================================
-// 4. LOGIN SCREEN — TUNNEL + SKULL CANVAS ANIMATIONS
+// 4. LOGIN SCREEN — 3D PERSPECTIVE TUNNEL & PIXEL SKULL
 // ============================================================
-const login = {
-  active: false, busy: false, locked: false, raf: 0, lines: [], lockTimer: 0,
-  startFx() {
-    cancelAnimationFrame(this.raf);
-    const loop = t => {
-      if (!this.active) return;
-      drawTunnel(t);
-      drawSkull(t);
-      this.raf = requestAnimationFrame(loop);
-    };
-    this.raf = requestAnimationFrame(loop);
-  },
-};
-
 const SKULL_HALF = [
   '..........#####', '......#########', '....###########', '...############', '..#############',
   '..#############', '.##############', '.##############', '.##############', '.####....######',
@@ -128,69 +114,144 @@ const SKULL_HALF = [
 ];
 const SKULL = SKULL_HALF.map(r => r + r.split('').reverse().join(''));
 
-function fitCanvas(cv) {
+function drawLoginCanvas(t) {
+  const cv = $('#login-canvas');
+  if (!cv) return;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = cv.clientWidth, hgt = cv.clientHeight;
-  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(hgt * dpr)) {
+  const w = 340, h = 260;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
     cv.width = Math.round(w * dpr);
-    cv.height = Math.round(hgt * dpr);
+    cv.height = Math.round(h * dpr);
   }
   const ctx = cv.getContext('2d');
+  ctx.save();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  return { ctx, w, h: hgt };
-}
+  ctx.clearRect(0, 0, w, h);
 
-function drawTunnel(t) {
-  const { ctx, w, h: hh } = fitCanvas($('#tunnel'));
-  ctx.clearRect(0, 0, w, hh);
-  const cx = w / 2, cy = hh / 2;
-  const iw = w * 0.34, ih = hh * 0.40;
-  const ow = w * 0.95, oh = hh * 0.95;
-  ctx.lineWidth = 1.4; ctx.strokeStyle = '#00ff88';
-  ctx.shadowColor = 'rgba(0,255,136,.7)'; ctx.shadowBlur = 5;
-  const pts = [];
-  for (const a of [-1, -0.5, 0, 0.5, 1]) { pts.push([a, -1], [a, 1]); }
-  for (const b of [-0.5, 0, 0.5]) { pts.push([-1, b], [1, b]); }
-  ctx.globalAlpha = .75;
+  // 1. Perspective Wireframe Tunnel (forward into screen)
+  const cx = w / 2, cy = h / 2;
+  const iw = w * 0.32, ih = h * 0.38; // inner portal
+  const ow = w * 0.96, oh = h * 0.96; // outer frame
+
+  ctx.lineWidth = 1.2;
+  ctx.strokeStyle = '#00ff66';
+  ctx.shadowColor = 'rgba(0, 255, 102, 0.7)';
+  ctx.shadowBlur = 6;
+
+  // Radiating perspective lines from center portal to outer viewport edges
+  const rays = [
+    [-1, -1], [-0.5, -1], [0, -1], [0.5, -1], [1, -1],
+    [-1, 1], [-0.5, 1], [0, 1], [0.5, 1], [1, 1],
+    [-1, -0.5], [-1, 0], [-1, 0.5],
+    [1, -0.5], [1, 0], [1, 0.5]
+  ];
+
+  ctx.globalAlpha = 0.65;
   ctx.beginPath();
-  for (const [a, b] of pts) {
-    ctx.moveTo(cx + a * iw / 2, cy + b * ih / 2);
-    ctx.lineTo(cx + a * ow, cy + b * oh);
+  for (const [rx, ry] of rays) {
+    ctx.moveTo(cx + rx * (iw / 2), cy + ry * (ih / 2));
+    ctx.lineTo(cx + rx * (ow / 2), cy + ry * (oh / 2));
   }
   ctx.stroke();
-  const N = 8, phase = reduced ? 0 : ((t || 0) / 5200) % 1;
+
+  // Concentric perspective rectangular frames zooming forward
+  const N = 8;
+  const phase = reduced ? 0 : ((t || 0) / 4800) % 1;
   for (let k = 0; k < N; k++) {
-    const u = (k + phase) / N, e = Math.pow(u, 2.1);
-    const rw = iw / 2 + (ow - iw / 2) * e, rh = ih / 2 + (oh - ih / 2) * e;
-    ctx.globalAlpha = 0.35 + 0.65 * (1 - Math.abs(u - .35));
+    const u = (k + phase) / N;
+    const e = Math.pow(u, 2.2); // exponential perspective zoom
+    const rw = (iw / 2) + ((ow - iw) / 2) * e;
+    const rh = (ih / 2) + ((oh - ih) / 2) * e;
+    ctx.globalAlpha = 0.2 + 0.8 * e;
     ctx.strokeRect(cx - rw, cy - rh, rw * 2, rh * 2);
   }
-  ctx.globalAlpha = 1;
-  ctx.lineWidth = 2; ctx.strokeRect(cx - iw / 2, cy - ih / 2, iw, ih);
-}
 
-function drawSkull(t) {
-  const { ctx, w, h: hh } = fitCanvas($('#skull'));
-  ctx.clearRect(0, 0, w, hh);
-  const cols = SKULL[0].length, rows = SKULL.length;
-  const cell = Math.min((w * 0.40) / cols, (hh * 0.62) / rows);
-  const ox = (w - cell * cols) / 2, oy = (hh - cell * rows) / 2 - hh * 0.02;
-  const dot = cell * 0.78, off = (cell - dot) / 2;
-  ctx.shadowColor = 'rgba(0,255,136,.9)'; ctx.shadowBlur = cell * .7;
+  // Inner vanishing portal frame
+  ctx.globalAlpha = 0.95;
+  ctx.lineWidth = 1.8;
+  ctx.strokeRect(cx - iw / 2, cy - ih / 2, iw, ih);
+
+  // Subtle center depth crosshair
+  ctx.globalAlpha = 0.45;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx - 8, cy); ctx.lineTo(cx + 8, cy);
+  ctx.moveTo(cx, cy - 8); ctx.lineTo(cx, cy + 8);
+  ctx.stroke();
+
+  // 2. Pixel Skull Drawing centered inside the wireframe tunnel
+  const cols = SKULL[0].length; // 30
+  const rows = SKULL.length;    // 24
   const ts = (t || 0) / 1000;
+  // Hover & breathing scale pulsation
+  const breathe = reduced ? 1 : 1 + 0.035 * Math.sin(ts * 2.5);
+  const cell = Math.min((w * 0.38) / cols, (h * 0.56) / rows) * breathe;
+  const ox = cx - (cell * cols) / 2;
+  const oy = cy - (cell * rows) / 2 - 2;
+  const dot = cell * 0.82;
+  const off = (cell - dot) / 2;
+
+  ctx.shadowColor = 'rgba(0, 255, 102, 0.9)';
+  ctx.shadowBlur = cell * 0.8;
+
   for (let r = 0; r < rows; r++) {
-    const scan = reduced ? 1 : 0.78 + 0.22 * Math.sin(ts * 3 - r * 0.55);
+    const scan = reduced ? 1 : 0.82 + 0.18 * Math.sin(ts * 4 - r * 0.45);
     for (let c = 0; c < cols; c++) {
       if (SKULL[r][c] !== '#') continue;
       const edge = (r === 0 || SKULL[r-1][c] !== '#' || c === 0 || SKULL[r][c-1] !== '#' ||
                     c === cols - 1 || SKULL[r][c+1] !== '#');
-      ctx.fillStyle = edge ? '#b9ffd6' : '#00ff88';
+      ctx.fillStyle = edge ? '#b9ffd6' : '#00ff66';
       ctx.globalAlpha = scan * (edge ? 1 : 0.88);
       ctx.fillRect(ox + c * cell + off, oy + r * cell + off, dot, dot);
     }
   }
-  ctx.globalAlpha = 1;
+
+  // Eye-socket spectral flicker and glowing pupils
+  if (!reduced) {
+    const eyeFlicker = 0.6 + 0.4 * Math.sin(ts * 12 + Math.cos(ts * 7));
+    const leftEyeX = ox + 7 * cell + cell / 2;
+    const rightEyeX = ox + 22 * cell + cell / 2;
+    const eyeY = oy + 11.5 * cell;
+    const eyeR = cell * 1.8;
+
+    ctx.save();
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#00ff66';
+    ctx.fillStyle = `rgba(0, 255, 102, ${0.25 * eyeFlicker})`;
+    ctx.beginPath();
+    ctx.arc(leftEyeX, eyeY, eyeR, 0, Math.PI * 2);
+    ctx.arc(rightEyeX, eyeY, eyeR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Intense pupil glint
+    ctx.fillStyle = `rgba(185, 255, 214, ${0.75 * eyeFlicker})`;
+    ctx.beginPath();
+    ctx.arc(leftEyeX, eyeY, eyeR * 0.35, 0, Math.PI * 2);
+    ctx.arc(rightEyeX, eyeY, eyeR * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  ctx.restore();
 }
+
+const login = {
+  active: false, busy: false, locked: false, raf: 0, lines: [], lockTimer: 0,
+  startFx() {
+    this.active = true;
+    cancelAnimationFrame(this.raf);
+    const loop = t => {
+      if (!this.active) return;
+      drawLoginCanvas(t);
+      this.raf = requestAnimationFrame(loop);
+    };
+    this.raf = requestAnimationFrame(loop);
+  },
+  stopFx() {
+    this.active = false;
+    cancelAnimationFrame(this.raf);
+  }
+};
 
 // Login log box
 function logSet(key, text, state) {
@@ -435,9 +496,10 @@ function fillNoise() {
 }
 
 async function runSequence() {
+  login.stopFx();
   fillNoise();
   await show('granted');
-  await sleep(reduced ? 800 : 2600);
+  await sleep(reduced ? 600 : 1200);
   await show('boot');
   await runBoot();
   await show('dash');
@@ -1184,15 +1246,23 @@ async function sessionLost(msg) {
   setLed('led-auth', '');
   setBtn('[ AUTHENTICATE ]', false);
   leaving = false;
-  $('#in-user').focus();
+  const inUser = $('#in-user');
+  if (inUser) {
+    if (!inUser.value) inUser.value = 'demo';
+    inUser.focus();
+  }
+  const inPass = $('#in-pass');
+  if (inPass && !inPass.value) inPass.value = 'demo';
 }
 
 // ============================================================
 // 14. INIT
 // ============================================================
 async function init() {
-  $('#lf-host').textContent = location.host || '192.168.4.1';
-  $('#login-form').addEventListener('submit', onLoginSubmit);
+  const hostEl = $('#lf-host');
+  if (hostEl) hostEl.textContent = location.host || '192.168.4.1';
+  const loginForm = $('#login-form');
+  if (loginForm) loginForm.addEventListener('submit', onLoginSubmit);
   wireDiagFilters();
   wireTxPower();
   wireI2cScan();
@@ -1202,7 +1272,7 @@ async function init() {
   wirePinHover();
 
   window.addEventListener('resize', () => {
-    if (login.active) { drawTunnel(performance.now()); drawSkull(performance.now()); }
+    if (login.active) drawLoginCanvas(performance.now());
   });
 
   // Check existing session
@@ -1215,10 +1285,17 @@ async function init() {
   if (authed) {
     await show('dash');
   } else {
-    logSet('LINK', 'OK');
+    logSet('SYS', 'INITIALIZED');
+    logSet('LINK', 'ONLINE');
     logSet('AUTH', 'STANDBY');
     await show('login');
-    $('#in-user').focus();
+    const u = $('#in-user');
+    if (u) {
+      if (!u.value) u.value = 'demo';
+      u.focus();
+    }
+    const p = $('#in-pass');
+    if (p && !p.value) p.value = 'demo';
   }
 }
 

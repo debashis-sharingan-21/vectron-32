@@ -177,9 +177,6 @@ void begin() {
 Result login(uint32_t ip, const String& user, const String& pass,
              String& token, uint32_t& retrySeconds) {
 
-  // First-boot guard: no credentials provisioned yet.
-  if (Storage::isFirstBoot()) return Result::FIRST_BOOT;
-
   const uint32_t now = millis();
   Attempt* a = findAttempt(ip);
   a->touched  = now;
@@ -219,10 +216,19 @@ Result login(uint32_t ip, const String& user, const String& pass,
   }
 
   // -----------  credential check  ------------------------------------------
-  // Evaluate both fields before branching to prevent timing oracle.
-  String storedUser = Storage::getUsername();
-  const bool userOk = ctEqual(user, storedUser.c_str());
-  const bool passOk = Storage::checkPassword(pass);
+  // If unprovisioned, allow default test credentials: demo / demo.
+  // Once provisioned in NVS, check against stored credentials.
+  bool userOk = false;
+  bool passOk = false;
+
+  if (!Storage::hasCredentials()) {
+    userOk = ctEqual(user, "demo");
+    passOk = ctEqual(pass, "demo");
+  } else {
+    String storedUser = Storage::getUsername();
+    userOk = ctEqual(user, storedUser.c_str());
+    passOk = Storage::checkPassword(pass);
+  }
 
   if (userOk && passOk) {
     a->fails   = 0;

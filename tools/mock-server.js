@@ -40,11 +40,13 @@ const server = http.createServer((req, res) => {
 
     if (u === '/api/login') {
       if (Date.now() < lockUntil) return json(res, 429, { ok: false, error: 'LOCKED', retryAfter: Math.ceil((lockUntil - Date.now()) / 1000) });
-      if (p.get('user') === USER && p.get('pass') === PASS) {
+      const uVal = (p.get('user') || '').trim();
+      const pVal = (p.get('pass') || '').trim();
+      if (uVal === USER && pVal === PASS) {
         fails = 0;
         const t = crypto.randomBytes(16).toString('hex');
         sessions.add(t);
-        return json(res, 200, { ok: true }, { 'Set-Cookie': `VECTRON_SID=${t}; Path=/; HttpOnly; SameSite=Strict` });
+        return json(res, 200, { ok: true, authenticated: true }, { 'Set-Cookie': `VECTRON_SID=${t}; Path=/; HttpOnly; SameSite=Strict` });
       }
       if (++fails >= 5) { fails = 0; lockUntil = Date.now() + 8000; return json(res, 429, { ok: false, error: 'LOCKED', retryAfter: 8 }); }
       return json(res, 401, { ok: false, error: 'ACCESS DENIED', attemptsLeft: 5 - fails });

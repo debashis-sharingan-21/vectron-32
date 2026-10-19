@@ -495,11 +495,6 @@ void begin(AsyncWebServer& server, bool filesystemOk) {
   server.on("/api/login", HTTP_POST, [](AsyncWebServerRequest* r) {
     if (!sameOrigin(r)) { sendErr(r, 403, "BAD_ORIGIN"); return; }
 
-    if (Auth::isFirstBoot()) {
-      sendErr(r, 403, "FIRST_BOOT_REQUIRED");
-      return;
-    }
-
     String user, pass;
     if (!getParam(r, "user", user) || !getParam(r, "pass", pass)) {
       sendErr(r, 400, "MISSING_FIELDS");
