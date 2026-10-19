@@ -118,7 +118,7 @@ function drawLoginCanvas(t) {
   const cv = $('#login-canvas');
   if (!cv) return;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = 340, h = 260;
+  const w = 520, h = 400;
   if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
     cv.width = Math.round(w * dpr);
     cv.height = Math.round(h * dpr);
@@ -128,25 +128,57 @@ function drawLoginCanvas(t) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
 
-  // 1. Perspective Wireframe Tunnel (forward into screen)
   const cx = w / 2, cy = h / 2;
-  const iw = w * 0.32, ih = h * 0.38; // inner portal
-  const ow = w * 0.96, oh = h * 0.96; // outer frame
+  const ts = (t || 0) / 1000;
 
-  ctx.lineWidth = 1.2;
+  // 1. Radar Grid Lines & Circular Reticle Background
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0, 255, 102, 0.16)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 6]);
+  for (const r of [70, 140, 210]) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.moveTo(cx - 240, cy); ctx.lineTo(cx + 240, cy);
+  ctx.moveTo(cx, cy - 180); ctx.lineTo(cx, cy + 180);
+  ctx.stroke();
+
+  // Rotating Radar Sweep Beam
+  if (!reduced) {
+    const sweepAngle = (ts * 1.5) % (Math.PI * 2);
+    const grad = ctx.createRadialGradient(cx, cy, 10, cx, cy, 210);
+    grad.addColorStop(0, 'rgba(0, 255, 102, 0.28)');
+    grad.addColorStop(1, 'rgba(0, 255, 102, 0.0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, 210, sweepAngle - 0.4, sweepAngle);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // 2. 3D Perspective Wireframe Tunnel (12 exponential frames)
+  const iw = w * 0.28, ih = h * 0.34;
+  const ow = w * 0.98, oh = h * 0.98;
+
+  ctx.lineWidth = 1.3;
   ctx.strokeStyle = '#00ff66';
-  ctx.shadowColor = 'rgba(0, 255, 102, 0.7)';
-  ctx.shadowBlur = 6;
+  ctx.shadowColor = 'rgba(0, 255, 102, 0.75)';
+  ctx.shadowBlur = 8;
 
-  // Radiating perspective lines from center portal to outer viewport edges
+  // 16 Perspective rays projecting from vanishing portal
   const rays = [
-    [-1, -1], [-0.5, -1], [0, -1], [0.5, -1], [1, -1],
-    [-1, 1], [-0.5, 1], [0, 1], [0.5, 1], [1, 1],
+    [-1, -1], [-0.66, -1], [-0.33, -1], [0, -1], [0.33, -1], [0.66, -1], [1, -1],
+    [-1, 1], [-0.66, 1], [-0.33, 1], [0, 1], [0.33, 1], [0.66, 1], [1, 1],
     [-1, -0.5], [-1, 0], [-1, 0.5],
     [1, -0.5], [1, 0], [1, 0.5]
   ];
 
-  ctx.globalAlpha = 0.65;
+  ctx.globalAlpha = 0.55;
   ctx.beginPath();
   for (const [rx, ry] of rays) {
     ctx.moveTo(cx + rx * (iw / 2), cy + ry * (ih / 2));
@@ -154,83 +186,101 @@ function drawLoginCanvas(t) {
   }
   ctx.stroke();
 
-  // Concentric perspective rectangular frames zooming forward
-  const N = 8;
-  const phase = reduced ? 0 : ((t || 0) / 4800) % 1;
+  // 12 Concentric perspective frames zooming forward exponentially
+  const N = 12;
+  const phase = reduced ? 0 : (ts * 0.22) % 1;
   for (let k = 0; k < N; k++) {
     const u = (k + phase) / N;
-    const e = Math.pow(u, 2.2); // exponential perspective zoom
+    const e = Math.pow(u, 2.3);
     const rw = (iw / 2) + ((ow - iw) / 2) * e;
     const rh = (ih / 2) + ((oh - ih) / 2) * e;
-    ctx.globalAlpha = 0.2 + 0.8 * e;
+    ctx.globalAlpha = 0.15 + 0.85 * e;
     ctx.strokeRect(cx - rw, cy - rh, rw * 2, rh * 2);
   }
 
   // Inner vanishing portal frame
   ctx.globalAlpha = 0.95;
-  ctx.lineWidth = 1.8;
+  ctx.lineWidth = 2.0;
   ctx.strokeRect(cx - iw / 2, cy - ih / 2, iw, ih);
 
-  // Subtle center depth crosshair
+  // Center depth crosshair
   ctx.globalAlpha = 0.45;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(cx - 8, cy); ctx.lineTo(cx + 8, cy);
-  ctx.moveTo(cx, cy - 8); ctx.lineTo(cx, cy + 8);
+  ctx.moveTo(cx - 10, cy); ctx.lineTo(cx + 10, cy);
+  ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy + 10);
   ctx.stroke();
 
-  // 2. Pixel Skull Drawing centered inside the wireframe tunnel
+  // 3. Pixel Skull Drawing (Doubled footprint: filling 520x400)
   const cols = SKULL[0].length; // 30
   const rows = SKULL.length;    // 24
-  const ts = (t || 0) / 1000;
-  // Hover & breathing scale pulsation
-  const breathe = reduced ? 1 : 1 + 0.035 * Math.sin(ts * 2.5);
-  const cell = Math.min((w * 0.38) / cols, (h * 0.56) / rows) * breathe;
+  const breathe = reduced ? 1 : 1 + 0.038 * Math.sin(ts * 2.4);
+  const cell = Math.min((w * 0.49) / cols, (h * 0.65) / rows) * breathe;
   const ox = cx - (cell * cols) / 2;
-  const oy = cy - (cell * rows) / 2 - 2;
-  const dot = cell * 0.82;
+  const oy = cy - (cell * rows) / 2 - 4;
+  const dot = cell * 0.84;
   const off = (cell - dot) / 2;
 
-  ctx.shadowColor = 'rgba(0, 255, 102, 0.9)';
-  ctx.shadowBlur = cell * 0.8;
+  ctx.shadowColor = 'rgba(0, 255, 102, 0.95)';
+  ctx.shadowBlur = cell * 0.9;
 
   for (let r = 0; r < rows; r++) {
-    const scan = reduced ? 1 : 0.82 + 0.18 * Math.sin(ts * 4 - r * 0.45);
+    const scan = reduced ? 1 : 0.82 + 0.18 * Math.sin(ts * 4.2 - r * 0.45);
     for (let c = 0; c < cols; c++) {
       if (SKULL[r][c] !== '#') continue;
       const edge = (r === 0 || SKULL[r-1][c] !== '#' || c === 0 || SKULL[r][c-1] !== '#' ||
                     c === cols - 1 || SKULL[r][c+1] !== '#');
-      ctx.fillStyle = edge ? '#b9ffd6' : '#00ff66';
+      ctx.fillStyle = edge ? '#c2ffd9' : '#00ff66';
       ctx.globalAlpha = scan * (edge ? 1 : 0.88);
       ctx.fillRect(ox + c * cell + off, oy + r * cell + off, dot, dot);
     }
   }
 
-  // Eye-socket spectral flicker and glowing pupils
+  // Animated pulsing eye-socket glow effect (#00ff66 to #33ff88)
   if (!reduced) {
-    const eyeFlicker = 0.6 + 0.4 * Math.sin(ts * 12 + Math.cos(ts * 7));
+    const eyePulse = 0.5 + 0.5 * Math.sin(ts * 3.5);
+    const eyeFlicker = 0.65 + 0.35 * Math.sin(ts * 14 + Math.cos(ts * 8));
     const leftEyeX = ox + 7 * cell + cell / 2;
     const rightEyeX = ox + 22 * cell + cell / 2;
     const eyeY = oy + 11.5 * cell;
-    const eyeR = cell * 1.8;
+    const eyeR = cell * 2.2;
 
     ctx.save();
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = '#00ff66';
-    ctx.fillStyle = `rgba(0, 255, 102, ${0.25 * eyeFlicker})`;
+    ctx.shadowBlur = 18;
+    const rVal = Math.round(eyePulse * 51);
+    const gVal = 255;
+    const bVal = Math.round(102 + eyePulse * 34);
+    ctx.shadowColor = `rgb(${rVal}, ${gVal}, ${bVal})`;
+
+    ctx.fillStyle = `rgba(${rVal}, ${gVal}, ${bVal}, ${0.32 * eyeFlicker})`;
     ctx.beginPath();
     ctx.arc(leftEyeX, eyeY, eyeR, 0, Math.PI * 2);
     ctx.arc(rightEyeX, eyeY, eyeR, 0, Math.PI * 2);
     ctx.fill();
 
     // Intense pupil glint
-    ctx.fillStyle = `rgba(185, 255, 214, ${0.75 * eyeFlicker})`;
+    ctx.fillStyle = `rgba(195, 255, 225, ${0.85 * eyeFlicker})`;
     ctx.beginPath();
-    ctx.arc(leftEyeX, eyeY, eyeR * 0.35, 0, Math.PI * 2);
-    ctx.arc(rightEyeX, eyeY, eyeR * 0.35, 0, Math.PI * 2);
+    ctx.arc(leftEyeX, eyeY, eyeR * 0.38, 0, Math.PI * 2);
+    ctx.arc(rightEyeX, eyeY, eyeR * 0.38, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
+
+  // Subtle green CRT scanline overlay on canvas
+  ctx.save();
+  ctx.globalAlpha = 0.08;
+  ctx.fillStyle = '#00ff66';
+  for (let y = 0; y < h; y += 3) {
+    ctx.fillRect(0, y, w, 1);
+  }
+  ctx.restore();
+
+  // Dynamic target coordinates readout updating
+  const az = (142.8 + 0.4 * Math.sin(ts * 0.7)).toFixed(1);
+  const el = (-12.4 + 0.2 * Math.cos(ts * 0.5)).toFixed(1);
+  const azElEl = $('#hud-azel');
+  if (azElEl) azElEl.textContent = `AZ: ${az}° | EL: ${el}°`;
 
   ctx.restore();
 }
@@ -336,79 +386,177 @@ async function onLoginSubmit(ev) {
   }
 }
 
+/// ============================================================
+// 5. BOOT SEQUENCE ANIMATION (ESP32 DevKit V1 Vector Schematic)
 // ============================================================
-// 5. BOOT SEQUENCE ANIMATION
-// ============================================================
-const PIN_L = ['3V3','CLK','SD0','SD1','D0','D15','D2','D4','RX2','TX2','D5','D18','D19','D21','RX0','TX0','D22','D23'];
-const PIN_R = ['VIN','GND','CMD','SD3','SD2','D13','D12','D14','D27','D26','D25','D33','D32','D35','D34','VN','VP','EN'];
+const PIN_L = ['3V3','EN','VP','VN','D34','D35','D32','D33','D25','D26','D27','D14','D12','D13','CMD','SD0','SD1','CLK','GND'];
+const PIN_R = ['VIN','GND','D15','D2','D4','RX2','TX2','D5','D18','D19','D21','RX0','TX0','D22','D23','D24','SD2','SD3','3V3'];
 
 function buildBoard() {
   const NS = 'http://www.w3.org/2000/svg';
-  const py = i => 142 + i * 34.9;
+  const py = i => 85 + i * 26.5; // 19 pins from 85 to 562
   let s = '';
-  s += '<g id="g-outline"><rect class="ln" x="1" y="1" width="402" height="814" rx="28"/>' +
-       '<circle class="ln" cx="26" cy="38" r="15"/><circle class="ln" cx="378" cy="38" r="15"/>' +
-       '<circle class="ln" cx="26" cy="790" r="15"/><circle class="ln" cx="378" cy="790" r="15"/></g>';
-  s += '<g id="g-usb"><path class="ln" d="M144 -2 H264 V84 Q264 96 252 96 H156 Q144 96 144 84 Z"/>' +
-       '<rect class="ln thin" x="156" y="10" width="96" height="70" rx="6"/>' +
-       '<rect class="ln" x="172" y="40" width="64" height="16" rx="8"/>';
-  for (let i = 0; i < 8; i++) s += `<rect class="ln thin" x="${158 + i * 12}" y="100" width="7" height="12"/>`;
-  s += '</g>';
-  s += '<g id="g-btn"><rect class="ln" x="66" y="16" width="38" height="62" rx="3"/><rect class="ln thin" x="74" y="28" width="22" height="38"/>' +
-       '<rect class="ln" x="291" y="16" width="38" height="62" rx="3"/><rect class="ln thin" x="299" y="28" width="22" height="38"/></g>';
-  s += '<g id="g-pads">';
-  for (let i = 0; i < 5; i++) s += `<rect class="ln thin" x="${64 + i * 19}" y="104" width="11" height="16"/>`;
-  for (let i = 0; i < 6; i++) s += `<rect class="ln thin" x="${196 + i * 19}" y="104" width="11" height="16"/>`;
-  s += '</g>';
-  s += '<g id="g-ic"><rect class="ln fillable" id="qfn" x="76" y="150" width="72" height="72"/><rect class="ln thin" x="94" y="168" width="36" height="36"/>';
-  for (let i = 0; i < 8; i++) {
-    const o = 82 + i * 8;
-    s += `<line class="ln thin" x1="${o}" y1="144" x2="${o}" y2="150"/><line class="ln thin" x1="${o}" y1="222" x2="${o}" y2="228"/>` +
-         `<line class="ln thin" x1="70" y1="${o+68}" x2="76" y2="${o+68}"/><line class="ln thin" x1="148" y1="${o+68}" x2="154" y2="${o+68}"/>`;
+
+  // 1. Outline & Micro-USB Connector (Step 1)
+  s += '<g id="g-outline">';
+  // PCB Outer boundary & corner mounting holes
+  s += '<rect class="ln" x="8" y="8" width="384" height="604" rx="18"/>';
+  s += '<rect class="ln thin" x="14" y="14" width="372" height="592" rx="14"/>';
+  s += '<circle class="ln" cx="28" cy="26" r="11"/><circle class="ln thin" cx="28" cy="26" r="5.5"/>';
+  s += '<circle class="ln" cx="372" cy="26" r="11"/><circle class="ln thin" cx="372" cy="26" r="5.5"/>';
+  s += '<circle class="ln" cx="28" cy="594" r="11"/><circle class="ln thin" cx="28" cy="594" r="5.5"/>';
+  s += '<circle class="ln" cx="372" cy="594" r="11"/><circle class="ln thin" cx="372" cy="594" r="5.5"/>';
+  // Micro-USB connector with metallic casing geometry & solder lugs
+  s += '<path class="ln" d="M 155 8 H 245 V 54 H 155 Z"/>';
+  s += '<rect class="ln" x="146" y="18" width="9" height="22" rx="2"/>';
+  s += '<rect class="ln" x="245" y="18" width="9" height="22" rx="2"/>';
+  s += '<path class="ln thin" d="M 166 14 H 234 V 42 Q 234 48 228 48 H 172 Q 166 48 166 42 Z"/>';
+  s += '<rect class="ln thin" x="180" y="22" width="40" height="10" rx="2"/>';
+  for (let i = 0; i < 5; i++) {
+    s += `<line class="ln thin" x1="${186 + i * 7}" y1="48" x2="${186 + i * 7}" y2="58"/>`;
   }
-  s += '<rect class="ln" x="206" y="154" width="34" height="16"/><rect class="ln" x="206" y="184" width="34" height="16"/><rect class="ln" x="206" y="214" width="34" height="16"/>' +
-       '<rect class="ln fillable" id="reg" x="246" y="140" width="64" height="104"/><line class="ln thin" x1="246" y1="180" x2="310" y2="180"/></g>';
-  s += '<g id="g-pass">';
-  for (const [x, y, w, hh] of [[68,252,30,42],[152,250,24,34],[184,250,24,34],[218,246,34,22],[262,250,40,32]])
-    s += `<rect class="ln" x="${x}" y="${y}" width="${w}" height="${hh}"/><line class="ln thin" x1="${x+w/2}" y1="${y}" x2="${x+w/2}" y2="${y+hh}"/>`;
-  for (let i = 0; i < 10; i++) s += `<rect class="ln" x="${64+i*21}" y="318" width="16" height="40"/><line class="ln thin" x1="${64+i*21}" y1="338" x2="${80+i*21}" y2="338"/>`;
-  s += '<rect class="ln" x="278" y="318" width="22" height="40"/><rect class="ln" x="306" y="318" width="22" height="40"/></g>';
-  s += '<g id="g-trace">' +
-       '<path class="ln thin" d="M76 222 C 58 262 50 300 62 340"/><path class="ln thin" d="M148 186 H196 V250"/>' +
-       '<path class="ln thin" d="M110 358 V420 L150 456"/><path class="ln thin" d="M250 358 V410 L214 456"/>' +
-       '<path class="ln thin" d="M300 244 L330 280 V420 L304 456"/><path class="ln thin" d="M40 150 C 56 190 52 230 70 258"/>' +
-       '<path class="ln thin" d="M368 140 C 346 200 350 300 330 330"/><path class="ln thin" d="M180 358 V430 L190 456"/></g>';
-  s += '<g id="g-mod"><rect class="ln fillable" id="module" x="86" y="457" width="238" height="260"/><rect class="ln thin" x="94" y="465" width="222" height="244"/>';
-  for (let i = 0; i < 14; i++) s += `<rect class="ln thin" x="68" y="${464+i*18}" width="18" height="10"/><rect class="ln thin" x="324" y="${464+i*18}" width="18" height="10"/>`;
-  s += '<circle class="ln thin" cx="284" cy="490" r="5"/>' +
-       '<g transform="rotate(180 205 587)">' +
-       '<text class="show-late" x="216" y="652" text-anchor="middle" font-size="9.5">FCC ID:2AC7Z-ESPWROOM32</text>' +
-       '<text class="show-late" x="250" y="616" text-anchor="middle" font-size="9.5">211-161007</text>' +
-       '<text class="show-late" x="205" y="530" text-anchor="middle" font-size="15">ESP-WROOM-32</text>' +
-       '<rect class="ln thin" x="170" y="590" width="26" height="22"/><text class="show-late" x="183" y="606" text-anchor="middle" font-size="12">R</text>' +
-       '<circle class="ln thin" cx="262" cy="604" r="22"/><circle class="ln thin" cx="262" cy="604" r="14"/>' +
-       '<circle class="ln thin" cx="214" cy="560" r="16"/><text class="show-late" x="214" y="565" text-anchor="middle" font-size="12">CE</text>' +
-       '<rect class="ln thin" x="296" y="568" width="40" height="28" rx="8"/><path class="ln thin" d="M306 584 Q316 572 326 584 M310 588 Q316 581 322 588"/>' +
-       '</g></g>';
-  s += '<g id="g-ant"><path class="ln" d="M118 806 V742 H150 V796 H182 V742 H214 V796 H246 V742 H278 V806"/>' +
-       '<path class="ln thin" d="M118 806 H112 V730 H286 V806 H278"/><rect class="ln thin" x="104" y="722" width="190" height="90"/></g>';
+  s += '</g>';
+
+  // 2. Copper routing traces (Step 2)
+  s += '<g id="g-traces">';
+  // USB Differential Pair (D+/D-) with 45-degree chamfers
+  s += '<path class="ln thin" d="M 193 58 V 66 L 186 73 V 86"/>';
+  s += '<path class="ln thin" d="M 207 58 V 66 L 214 73 V 86"/>';
+  // 5V bus to AMS1117 regulator
+  s += '<path class="ln thin" d="M 186 58 V 70 L 252 70 L 268 86"/>';
+  // UART lines CP2102 to ESP-WROOM-32
+  s += '<path class="ln thin" d="M 184 142 L 184 158 L 150 158 L 150 174"/>';
+  s += '<path class="ln thin" d="M 216 142 L 216 158 L 250 158 L 250 174"/>';
+  // 3.3V Output bus
+  s += '<path class="ln thin" d="M 285 142 V 156 L 310 156 L 310 174"/>';
+  s += '<path class="ln thin" d="M 285 148 L 354 148 L 354 86"/>';
+  // Left header breakout traces
+  for (let i = 0; i < 14; i++) {
+    const ty = 184 + i * 16;
+    s += `<path class="ln thin" d="M 75 ${ty} L 50 ${ty} L 36 ${85 + (i + 4) * 26.5}"/>`;
+  }
+  // Right header breakout traces
+  for (let i = 0; i < 14; i++) {
+    const ty = 184 + i * 16;
+    s += `<path class="ln thin" d="M 325 ${ty} L 350 ${ty} L 364 ${85 + (i + 2) * 26.5}"/>`;
+  }
+  s += '</g>';
+
+  // 3. Passives, crystal oscillator & switches (Step 2)
+  s += '<g id="g-passives">';
+  // 40.000 MHz Crystal Oscillator
+  s += '<rect class="ln" x="86" y="84" width="52" height="34" rx="5"/>';
+  s += '<rect class="ln thin" x="91" y="89" width="42" height="24" rx="3"/>';
+  s += '<text class="show-late" x="112" y="102" text-anchor="middle" font-size="7.5">40.000</text>';
+  s += '<text class="show-late" x="112" y="111" text-anchor="middle" font-size="6">MHz</text>';
+  // SMD 0805 filter capacitors & resistor arrays
+  for (const [x, y, w, hh] of [
+    [148, 86, 12, 22], [148, 114, 12, 22],
+    [238, 86, 12, 22], [238, 114, 12, 22],
+    [320, 86, 14, 24], [320, 116, 14, 24],
+    [110, 130, 24, 12], [266, 68, 22, 12]
+  ]) {
+    s += `<rect class="ln thin" x="${x}" y="${y}" width="${w}" height="${hh}" rx="2"/>`;
+    s += `<line class="ln thin" x1="${x + w / 2}" y1="${y}" x2="${x + w / 2}" y2="${y + hh}"/>`;
+  }
+  // EN & BOOT tactile switches
+  s += '<rect class="ln" x="58" y="22" width="36" height="46" rx="4"/>';
+  s += '<rect class="ln thin" x="65" y="29" width="22" height="32" rx="2"/>';
+  s += '<text class="show-late" x="76" y="47" text-anchor="middle" font-size="8.5" font-weight="bold">EN</text>';
+  s += '<rect class="ln" x="306" y="22" width="36" height="46" rx="4"/>';
+  s += '<rect class="ln thin" x="313" y="29" width="22" height="32" rx="2"/>';
+  s += '<text class="show-late" x="324" y="47" text-anchor="middle" font-size="8.5" font-weight="bold">BOOT</text>';
+  s += '</g>';
+
+  // 4. ICs: CP2102 USB-UART & AMS1117 3.3V LDO (Step 3)
+  s += '<g id="g-ics">';
+  // CP2102 IC
+  s += '<rect class="ln fillable" id="ic-uart" x="170" y="86" width="60" height="58" rx="3"/>';
+  s += '<circle class="ln thin" cx="178" cy="94" r="2.5"/>';
+  s += '<text class="show-late" x="200" y="116" text-anchor="middle" font-size="9" font-weight="bold">CP2102</text>';
+  s += '<text class="show-late" x="200" y="128" text-anchor="middle" font-size="6.5">USB-UART</text>';
+  for (let i = 0; i < 7; i++) {
+    const o = 175 + i * 7.5;
+    s += `<line class="ln thin" x1="${o}" y1="80" x2="${o}" y2="86"/>`;
+    s += `<line class="ln thin" x1="${o}" y1="144" x2="${o}" y2="150"/>`;
+    const vo = 91 + i * 7.5;
+    s += `<line class="ln thin" x1="164" y1="${vo}" x2="170" y2="${vo}"/>`;
+    s += `<line class="ln thin" x1="230" y1="${vo}" x2="236" y2="${vo}"/>`;
+  }
+  // AMS1117 LDO Regulator
+  s += '<rect class="ln fillable" id="ic-reg" x="264" y="88" width="46" height="52" rx="2"/>';
+  s += '<path class="ln" d="M 272 88 V 76 H 302 V 88"/>'; // heatsink tab
+  s += '<rect class="ln thin" x="270" y="140" width="6" height="12"/>';
+  s += '<rect class="ln thin" x="284" y="140" width="6" height="12"/>';
+  s += '<rect class="ln thin" x="298" y="140" width="6" height="12"/>';
+  s += '<text class="show-late" x="287" y="112" text-anchor="middle" font-size="7.5" font-weight="bold">AMS1117</text>';
+  s += '<text class="show-late" x="287" y="123" text-anchor="middle" font-size="6.5">3.3V LDO</text>';
+  s += '</g>';
+
+  // 5. ESP-WROOM-32 RF Shield Can (Step 3)
+  s += '<g id="g-rf-can">';
+  s += '<rect class="ln fillable" id="wroom-can" x="75" y="170" width="250" height="260" rx="8"/>';
+  s += '<rect class="ln thin" x="83" y="178" width="234" height="244" rx="6"/>';
+  // Castellation pads along left, right, bottom
+  for (let i = 0; i < 14; i++) {
+    const ty = 184 + i * 16;
+    s += `<rect class="ln thin" x="67" y="${ty}" width="10" height="9"/>`;
+    s += `<rect class="ln thin" x="323" y="${ty}" width="10" height="9"/>`;
+  }
+  for (let i = 0; i < 10; i++) {
+    s += `<rect class="ln thin" x="${102 + i * 20}" y="428" width="9" height="10"/>`;
+  }
+  // Silkscreen engravings
+  s += '<text class="show-late" x="200" y="235" text-anchor="middle" font-size="16" font-weight="bold" letter-spacing="1">ESP-WROOM-32</text>';
+  s += '<text class="show-late" x="200" y="254" text-anchor="middle" font-size="9.5">ESPRESSIF SYSTEMS</text>';
+  s += '<line class="ln thin" x1="110" y1="266" x2="290" y2="266"/>';
+  s += '<text class="show-late" x="200" y="286" text-anchor="middle" font-size="8">FCC ID: 2AC7Z-ESPWROOM32</text>';
+  s += '<text class="show-late" x="200" y="302" text-anchor="middle" font-size="8">KCC / CE / RoHS Compliant</text>';
+  s += '<circle class="ln thin" cx="145" cy="340" r="13"/><text class="show-late" x="145" y="344" text-anchor="middle" font-size="8.5">CE</text>';
+  s += '<rect class="ln thin" x="175" y="328" width="38" height="24" rx="4"/><text class="show-late" x="194" y="343" text-anchor="middle" font-size="7.5">Wi-Fi</text>';
+  s += '<rect class="ln thin" x="222" y="328" width="32" height="24" rx="4"/><text class="show-late" x="238" y="343" text-anchor="middle" font-size="7.5">BT</text>';
+  s += '<text class="show-late" x="200" y="386" text-anchor="middle" font-size="8.5" letter-spacing="0.5">Tensilica Xtensa Dual-Core 240MHz</text>';
+  s += '</g>';
+
+  // 6. Meander Inverted-F PCB Antenna (Step 3)
+  s += '<g id="g-antenna">';
+  s += '<rect class="ln thin fillable" id="antenna-bg" x="80" y="444" width="240" height="130" rx="4"/>';
+  s += '<path class="ln ant-trace" d="M 106 564 V 466 H 294 V 564 H 280 V 478 H 262 V 552 H 248 V 478 H 230 V 552 H 216 V 478 H 198 V 552 H 184 V 478 H 166 V 552 H 152 V 478 H 134 V 552 H 120 V 478 H 106 Z"/>';
+  s += '<line class="ln" x1="120" y1="466" x2="120" y2="438"/>';
+  s += '<line class="ln" x1="140" y1="466" x2="140" y2="438"/>';
+  s += '<text class="show-late" x="200" y="525" text-anchor="middle" font-size="9.5" letter-spacing="1.5">2.4GHz MIFA ANTENNA</text>';
+  s += '</g>';
+
+  // 7. Dual Header Strips - 19-Pin Rails (Step 4)
   s += '<g id="g-pins">';
-  s += '<rect class="ln" x="11" y="101" width="14" height="14"/><rect class="ln" x="379" y="101" width="14" height="14"/>';
-  for (let i = 0; i < 18; i++) {
-    s += `<circle class="pin" data-i="${i}" data-s="L" cx="18" cy="${py(i).toFixed(1)}" r="9.5"/><circle class="pin" data-i="${i}" data-s="R" cx="386" cy="${py(i).toFixed(1)}" r="9.5"/>`;
+  for (let i = 0; i < 19; i++) {
+    const y = py(i);
+    // Left pin
+    s += `<circle class="pin pin-via" data-i="${i}" cx="28" cy="${y}" r="8"/>`;
+    s += `<circle class="pin-hole" cx="28" cy="${y}" r="3.5"/>`;
+    s += `<text class="pin-lbl" x="44" y="${y + 3.5}">${PIN_L[i]}</text>`;
+    // Right pin
+    s += `<circle class="pin pin-via" data-i="${i}" cx="372" cy="${y}" r="8"/>`;
+    s += `<circle class="pin-hole" cx="372" cy="${y}" r="3.5"/>`;
+    s += `<text class="pin-lbl" x="356" y="${y + 3.5}" text-anchor="end">${PIN_R[i]}</text>`;
   }
-  s += '</g><g id="g-labels">';
-  for (let i = 0; i < 18; i++) {
-    s += `<text transform="translate(33 ${py(i).toFixed(1)}) rotate(90)" text-anchor="middle">${PIN_L[i]}</text>` +
-         `<text transform="translate(355 ${py(i).toFixed(1)}) rotate(90)" text-anchor="middle">${PIN_R[i]}</text>`;
-  }
-  s += '<text transform="translate(116 47) rotate(90)" text-anchor="middle">BOOT</text>' +
-       '<text transform="translate(274 47) rotate(90)" text-anchor="middle">EN</text></g>';
-  s += '<circle id="hb" class="blinkled" cx="352" cy="64" r="4"/>';
-  $('#bt-board').innerHTML = `<svg viewBox="-6 -8 416 832" xmlns="${NS}" role="img" aria-label="ESP32 board drawing">${s}</svg>`;
+  s += '</g>';
+
+  // 8. Switches & Indicators / LEDs (Step 5)
+  s += '<g id="g-leds">';
+  s += '<circle id="pwr-led" class="ln" cx="114" cy="56" r="4.5"/>';
+  s += '<text class="show-late" x="114" y="69" text-anchor="middle" font-size="7">PWR</text>';
+  s += '<circle id="gpio2-led" class="ln blinkled" cx="286" cy="56" r="4.5"/>';
+  s += '<text class="show-late" x="286" y="69" text-anchor="middle" font-size="7">IO2</text>';
+  s += '</g>';
+
+  $('#bt-board').innerHTML = `<svg id="boot-board-svg" viewBox="0 0 400 620" xmlns="${NS}" role="img" aria-label="ESP32 DevKit V1 Board Schematic">${s}</svg>`;
+
   $$('#bt-board .ln').forEach(el => {
     let len = 400; try { len = Math.ceil(el.getTotalLength()) + 2; } catch (_) {}
-    el.style.strokeDasharray = len; el.style.strokeDashoffset = len; el.dataset.len = len;
+    el.style.strokeDasharray = len;
+    el.style.strokeDashoffset = len;
+    el.dataset.len = len;
   });
   $$('#bt-board .show-late').forEach(t => { t.style.opacity = 0; });
 }
@@ -439,43 +587,65 @@ function setProgress(p, stage) {
 }
 
 function litPins() {
-  $$('#g-pins .pin').forEach(p => {
-    const i = +p.dataset.i, order = i * 2 + (p.dataset.s === 'R' ? 1 : 0);
-    setTimeout(() => p.classList.add('lit'), reduced ? 0 : order * 26);
+  $$('#g-pins .pin-via').forEach((p, idx) => {
+    setTimeout(() => p.classList.add('lit'), reduced ? 0 : idx * 16);
   });
 }
 
-// Boot steps: 8 logical stages matching the spec
-const BOOT_STEPS = [
-  'POWER ON',
-  'FILESYSTEM',
-  'HARDWARE INIT',
-  'I2C BUS',
-  'GPIO MATRIX',
-  'WIFI AP',
-  'WEBSOCKET',
-  'SYSTEM READY',
-];
+function blinkGpio2Led() {
+  const led = $('#gpio2-led');
+  if (led) {
+    led.classList.add('flashing');
+  }
+}
 
 async function runBoot() {
   buildBoard();
   $('#bt-log').replaceChildren();
   $('#bt-board').classList.remove('done');
-  setProgress(0, 'POWER');
+  setProgress(0, 'POWER ON');
 
-  const T = reduced ? 0.15 : 0.85;
+  const T = reduced ? 0.2 : 1.0;
 
   const timeline = [
-    [0,    () => { logLine('VECTRON-32 BIOS v2.0 // COLD BOOT'); drawGroup('g-outline', 900); setProgress(4, 'POWER ON'); }],
-    [450,  () => { logLine('POWER ON............... ESP32-WROOM-32', 'OK'); setProgress(12); }],
-    [900,  () => { logLine('FILESYSTEM............. LittleFS mount', 'MOUNTED'); drawGroup('g-usb', 700); drawGroup('g-btn', 700); setProgress(24, 'FILESYSTEM'); }],
-    [1450, () => { logLine('HARDWARE INIT.......... GPIO / ADC / DAC', 'OK'); drawGroup('g-pads', 600); drawGroup('g-ic', 900); setProgress(36, 'HW INIT'); }],
-    [2100, () => { logLine('I2C BUS................ SDA:21 SCL:22', 'READY'); $('#qfn').classList.add('lit'); $('#reg').classList.add('lit'); setProgress(48, 'I2C BUS'); }],
-    [2700, () => { logLine('GPIO MATRIX............ OUT + IN mapped', 'OK'); drawGroup('g-pass', 900); drawGroup('g-trace', 1100); setProgress(60, 'GPIO'); litPins(); }],
-    [3500, () => { logLine('WIFI AP................ VECTRON-32 192.168.4.1', 'ONLINE'); drawGroup('g-mod', 1300); setProgress(72, 'WIFI AP'); }],
-    [4400, () => { $('#module').classList.add('lit'); $$('#bt-board .show-late').forEach(t => t.style.opacity = .85); drawGroup('g-ant', 800); setProgress(82); }],
-    [5300, () => { logLine('WEBSOCKET.............. /ws endpoint', 'OPEN'); setProgress(90, 'WEBSOCKET'); }],
-    [5900, () => { logLine('SYSTEM READY........... HANDOFF -> DASHBOARD'); setProgress(100, 'ONLINE'); $('#bt-board').classList.add('done'); $('#hb').style.opacity = 1; }],
+    [0, () => {
+      logLine('VECTRON-32 BIOS v2.0 // HARDWARE COLD BOOT');
+      drawGroup('g-outline', 550);
+      setProgress(15, 'POWER ON');
+    }],
+    [550, () => {
+      logLine('PCB TOPOLOGY........... ESP32 DevKit V1 Outline & USB', 'OK');
+      drawGroup('g-traces', 650);
+      drawGroup('g-passives', 650);
+      setProgress(35, 'CIRCUIT TRACE');
+    }],
+    [1200, () => {
+      logLine('COPPER ROUTING......... 45° Chamfer Bus & Passives', 'ROUTED');
+      logLine('SILICON BRIDGE......... CP2102 UART & AMS1117 3.3V LDO', 'STABLE');
+      drawGroup('g-ics', 600);
+      drawGroup('g-rf-can', 700);
+      drawGroup('g-antenna', 700);
+      $('#wroom-can').classList.add('lit');
+      $$('#bt-board .show-late').forEach(t => t.style.opacity = .88);
+      setProgress(65, 'MCU CORE');
+    }],
+    [1950, () => {
+      logLine('ESP-WROOM-32 CAN....... RF Shield & Xtensa 240MHz', 'LOCKED');
+      logLine('RF SUBSYSTEM........... 2.4GHz Meander MIFA Antenna', 'TUNED');
+      logLine('38-PIN BREAKOUT........ Dual Header Rails Mapped', 'ARMED');
+      litPins();
+      setProgress(85, 'PIN MATRIX');
+    }],
+    [2500, () => {
+      logLine('GPIO 2 STATUS LED...... HEARTBEAT LINK VERIFIED', 'ONLINE');
+      logLine('SYSTEM READY........... INITIALIZATION COMPLETE', 'OK');
+      blinkGpio2Led();
+      setProgress(100, 'SYSTEM READY');
+      $('#bt-board').classList.add('done');
+    }],
+    [2850, () => {
+      // Complete
+    }]
   ];
 
   const t0 = performance.now();
@@ -484,7 +654,7 @@ async function runBoot() {
     if (wait > 0) await sleep(wait);
     fn();
   }
-  await sleep(900 * T);
+  await sleep(400 * T);
 }
 
 // Access-granted noise helper

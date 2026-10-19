@@ -30,55 +30,70 @@
       </header>
 
       <div class="lf-split">
-        <!-- Left: Form Panel -->
+        <!-- Left: Form Panel (Hacker Terminal Matrix) -->
         <div class="lf-form-panel">
-          <div class="lf-panel-header">VECTRON-32 INSTRUMENTATION SYSTEM</div>
+          <div class="lf-panel-header">
+            <span class="hdr-tag">&#9658; SYS_ACCESS_V2.0</span>
+            <span class="hdr-node">NODE: 0x7E3F // SEC-LVL: 4</span>
+          </div>
+
           <form class="lf-form" id="login-form" autocomplete="off" novalidate>
-            <div class="prompt">vectron@esp32:~$ <span>authenticate --operator</span></div>
+            <div class="prompt">vectron@esp32:~$ <span class="prompt-cmd">sec-auth --init-tunnel</span></div>
 
             <label class="lf-field">
-              <span class="lf-label">OPERATOR // USERNAME</span>
+              <span class="lf-label">&gt;&gt; OPERATOR_IDENT: <span class="term-cursor">[ _ ]</span></span>
               <div class="lf-box">
+                <span class="input-prefix">USR://</span>
                 <input type="text" id="in-user" name="user" spellcheck="false" autofocus required maxlength="63" placeholder="demo" value="demo"/>
               </div>
+              <span class="field-hint">AUTH_SCHEME: ENCRYPTED_NVS_TOKEN</span>
             </label>
 
             <label class="lf-field">
-              <span class="lf-label">PASSKEY // CIPHER</span>
+              <span class="lf-label">&gt;&gt; INPUT SEC_KEY: <span class="term-cursor">[ _ ]</span></span>
               <div class="lf-box">
+                <span class="input-prefix">KEY://</span>
                 <input type="password" id="in-pass" name="pass" spellcheck="false" required maxlength="63" placeholder="demo" value="demo"/>
               </div>
+              <span class="field-hint">CIPHER: SHA-256 + 16-BYTE SALT + RTC</span>
             </label>
 
             <div class="lf-readout">
-              <span class="readout-tag">SYS-STAT:</span>
+              <span class="readout-tag">[COMM_MATRIX]</span>
               <span class="readout-val">CHANNEL: 6 | BAUD: 115200 | AUTH: SHA-256 + RTC</span>
             </div>
 
             <div class="lf-actions">
               <button type="submit" class="lf-btn" id="btn-login">
-                <span class="btn-text">[ AUTHENTICATE ]</span>
+                <span class="btn-bracket">[</span>
+                <span class="btn-text">AUTHENTICATE &amp; ENGAGE</span>
+                <span class="btn-bracket">]</span>
               </button>
             </div>
           </form>
         </div>
 
-        <!-- Right: 3D Canvas Box -->
+        <!-- Right: 3D Canvas Box (Dominant visual weight 55-60%) -->
         <div class="lf-canvas-box">
           <div class="canvas-header">
-            <span>OPTICAL MATRIX RETICLE</span>
-            <span class="ch-sub">3D WIREFRAME + SPECTRAL CORE</span>
+            <span class="ch-title">&#9670; OPTICAL RETICLE // 3D VECTOR CORE</span>
+            <span class="ch-sub" id="hud-azel">AZ: 142.8&deg; | EL: -12.4&deg;</span>
           </div>
           <div class="canvas-wrapper">
-            <canvas id="login-canvas" width="340" height="260"></canvas>
+            <canvas id="login-canvas" width="520" height="400"></canvas>
             <div class="hud-crosshair top-left"></div>
             <div class="hud-crosshair top-right"></div>
             <div class="hud-crosshair btm-left"></div>
             <div class="hud-crosshair btm-right"></div>
+            <div class="hud-telemetry hud-tl">RADAR: ACTIVE (10Hz)</div>
+            <div class="hud-telemetry hud-tr">REG: 0x3FFB0000 - 0x3FFB3FFF</div>
+            <div class="hud-telemetry hud-bl">TGT_LOCK: ACQUIRED</div>
+            <div class="hud-telemetry hud-br">CORE: DUAL-XTENSA</div>
           </div>
           <div class="canvas-footer">
             <span>SYS_CLEARANCE: LEVEL_4</span>
-            <span>VECTOR_SYNC: 60FPS</span>
+            <span>MEM: 0x3FFB0000 &mdash; 0x3FFB3FFF</span>
+            <span class="ch-fps">VECTOR_SYNC: 60FPS</span>
           </div>
         </div>
       </div>
@@ -86,7 +101,7 @@
       <!-- Terminal Log Strip at bottom -->
       <div class="lf-terminal-strip">
         <div class="term-strip-header">
-          <span>TERMINAL ACTIVITY LOG</span>
+          <span>TERMINAL ACTIVITY LOG &mdash; ESP32-WROOM-32 HARDWARE MATRIX</span>
           <span id="lf-host">192.168.4.1</span>
         </div>
         <ul class="lf-terminal-log" id="login-log">
