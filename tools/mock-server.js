@@ -3,8 +3,8 @@
 //   node tools/mock-server.js          then open  http://localhost:8099/
 //   login:  demo / demo
 //
-// It imitates the routes in src/api.cpp with FAKE data.
-// It uses only Node built-ins.
+// It imitates the routes in src/api.cpp with real-time WebSocket telemetry.
+// It uses only Node.js built-ins (zero npm packages required).
 // Override with env vars: MOCK_PORT, MOCK_USER, MOCK_PASS.
 'use strict';
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
@@ -13,7 +13,7 @@ const ROOT = path.resolve(__dirname, '..', 'data');
 const PORT = +process.env.MOCK_PORT || 8099;
 const USER = process.env.MOCK_USER || 'demo';
 const PASS = process.env.MOCK_PASS || 'demo';
-const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.woff2': 'font/woff2' };
+const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.woff2': 'font/woff2', '.png': 'image/png', '.svg': 'image/svg+xml' };
 
 const sessions = new Set();
 let fails = 0, lockUntil = 0;
@@ -29,7 +29,7 @@ const authed = (req) => {
   return !!(m && sessions.has(m[1]));
 };
 
-http.createServer((req, res) => {
+const server = http.createServer((req, res) => {
   let body = '';
   req.on('data', (d) => (body += d));
   req.on('end', () => {
@@ -81,4 +81,73 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' });
     fs.createReadStream(f).pipe(res);
   });
-}).listen(PORT, () => console.log(`VECTRON-32 mock UI on http://localhost:${PORT}/  (login: ${USER} / ${PASS})`));
+});
+
+// Real-time WebSocket support for mock server (RFC 6455)
+server.on('upgrade', (req, socket) => {
+  if (req.url === '/ws') {
+    const key = req.headers['sec-websocket-key'];
+    if (!key) { socket.destroy(); return; }
+    const accept = crypto.createHash('sha1').update(key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');
+    socket.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ' + accept + '\r\n\r\n');
+
+    const send = (obj) => {
+      const data = Buffer.from(JSON.stringify(obj));
+      let header;
+      if (data.length < 126) {
+        header = Buffer.from([0x81, data.length]);
+      } else if (data.length < 65536) {
+        header = Buffer.alloc(4);
+        header[0] = 0x81; header[1] = 126;
+        header.writeUInt16BE(data.length, 2);
+      } else {
+        header = Buffer.alloc(10);
+        header[0] = 0x81; header[1] = 127;
+        header.writeBigUInt64BE(BigInt(data.length), 2);
+      }
+      try { socket.write(Buffer.concat([header, data])); } catch (_) {}
+    };
+
+    const interval = setInterval(() => {
+      const up = Math.floor((Date.now() - t0) / 1000);
+      const free = 210000 + Math.floor(Math.sin(up / 2) * 8000);
+      send({
+        t: "telem",
+        up,
+        heap: free,
+        heapMin: 187000,
+        heapMax: 110000,
+        heapTotal: 327680,
+        heapFrag: 8.5,
+        temp: 42.4 + Math.sin(up / 4) * 0.8,
+        rssi: -45,
+        clients: 1,
+        cpuMHz: 240,
+        watermark: 4200,
+        telWatermark: 4200,
+        netWatermark: 3950,
+        fsUsed: 98304,
+        fsTotal: 1048576,
+        sketchBytes: 1228800,
+        flashBytes: 4194304,
+        gpio: {
+          out: [
+            { id: 0, pin: 2, name: 'ONBOARD_LED', on: led, blocked: false },
+            { id: 1, pin: 16, name: 'RELAY_1', on: false, blocked: false }
+          ],
+          in: [
+            { id: 0, pin: 0, name: 'BOOT_BUTTON', active: false }
+          ]
+        },
+        i2c: { state: scan, sda: 21, scl: 22, found: [{ addr: 0x3C, name: 'SSD1306', desc: 'OLED 128x64' }, { addr: 0x76, name: 'BME280', desc: 'Env sensor' }] },
+        ble: { adv: ble, conn: 0, name: 'VECTRON-32' },
+        wifi: { ssid: 'VECTRON-32', ip: '192.168.4.1', ch: 6, clients: 1, txLevel: tx, txPower: ['LOW', 'MED', 'HIGH'][tx] }
+      });
+    }, 100);
+
+    socket.on('close', () => clearInterval(interval));
+    socket.on('error', () => clearInterval(interval));
+  }
+});
+
+server.listen(PORT, () => console.log(`VECTRON-32 mock UI on http://localhost:${PORT}/  (login: ${USER} / ${PASS})`));

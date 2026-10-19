@@ -1,80 +1,91 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#050e08">
-<title>VECTRON-32 // REAL-TIME INSTRUMENTATION CONSOLE</title>
-<link rel="icon" href="data:,">
-<link rel="stylesheet" href="style.css">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>VECTRON-32 // COMMAND CENTER</title>
+<link rel="stylesheet" href="style.css"/>
 </head>
-<body>
+<body data-screen="login">
 
-<div id="app">
+<div class="app">
 
   <!-- ===================== SCREEN: LOGIN ===================== -->
-  <section id="screen-login" class="screen">
-    <div class="login-frame">
+  <section id="screen-login" class="screen active">
+    <div class="login-frame" id="login-frame">
 
       <header class="lf-head">
-        <div class="lf-logo"><i class="tri"></i><span>VECTRON-32</span><i class="tri"></i></div>
-        <div class="lf-sub"><b>VECTRON-32</b><span>ESP32-WROOM-32 CMD CENTER v2.0</span></div>
+        <div class="lf-logo">
+          <canvas id="tri-logo" width="34" height="34" aria-hidden="true"></canvas>
+          <div>
+            <div class="lf-title">VECTRON-32</div>
+            <div class="lf-sub">INSTRUMENTATION &bull; SCADA TELEMETRY</div>
+          </div>
+        </div>
+        <div class="lf-indicators">
+          <div class="ind"><i class="led led-red"></i><span>ARMED</span></div>
+          <div class="ind"><i class="led led-amber"></i><span>ESP32-WROOM-32</span></div>
+          <div class="ind"><i class="led led-green"></i><span>115200 BAUD</span></div>
+        </div>
       </header>
 
       <div class="lf-body">
-        <form id="login-form" class="lf-left" autocomplete="on" novalidate>
-          <div class="lf-label">[ OPERATOR ]</div>
-          <div class="lf-box">
-            <input id="in-user" name="username" type="text" autocomplete="username"
-                   autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="63"
-                   placeholder="USER NAME" aria-label="User name">
-          </div>
+        <div class="lf-hud">
+          <canvas id="tunnel" aria-hidden="true"></canvas>
+          <canvas id="skull" aria-hidden="true"></canvas>
+          <div class="hud-crosshair top-left"></div>
+          <div class="hud-crosshair top-right"></div>
+          <div class="hud-crosshair btm-left"></div>
+          <div class="hud-crosshair btm-right"></div>
+        </div>
 
-          <div class="lf-label">[ PASSKEY ]</div>
-          <div class="lf-box">
-            <input id="in-pass" name="password" type="password" autocomplete="current-password"
-                   maxlength="63" placeholder="PASSWORD" aria-label="Password">
-          </div>
+        <form class="lf-form" id="login-form" autocomplete="off" novalidate>
+          <div class="prompt">vectron@esp32:~$ <span>authenticate --operator</span></div>
 
-          <div class="lf-list" aria-live="polite">
-            <div class="lf-list-head"><span>[ SESSION :</span><span>]</span></div>
-            <ul id="login-log">
-              <li>LINK ........ <em>OK</em></li>
-              <li>AUTH ........ <em>STANDBY</em></li>
-            </ul>
-          </div>
+          <label class="field">
+            <span class="field-lbl">OPERATOR // USERNAME</span>
+            <div class="field-box">
+              <input type="text" id="lf-user" name="user" spellcheck="false" autofocus required maxlength="63" placeholder="callsign"/>
+            </div>
+          </label>
+
+          <label class="field">
+            <span class="field-lbl">CIPHER // PASSPHRASE</span>
+            <div class="field-box">
+              <input type="password" id="lf-pass" name="pass" spellcheck="false" required maxlength="63" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"/>
+            </div>
+          </label>
 
           <div class="lf-actions">
-            <i class="led on" id="led-link" title="link"></i>
-            <i class="led" id="led-auth" title="auth"></i>
-            <i class="led" id="led-lock" title="lock"></i>
-            <button id="btn-login" class="lf-btn" type="submit">[ AUTHENTICATE ]</button>
+            <button type="submit" class="btn btn-primary" id="lf-btn">
+              <span class="btn-scan"></span>
+              <span class="btn-text">[ ACCESS SYSTEM ]</span>
+            </button>
+            <div class="lf-status" id="lf-status" aria-live="polite">STANDBY // READY</div>
           </div>
         </form>
-
-        <div class="lf-view">
-          <canvas id="tunnel"></canvas>
-          <canvas id="skull"></canvas>
-        </div>
       </div>
 
-      <div class="lf-title"><span>VECTRON-32</span></div>
-
       <footer class="lf-foot">
-        <span>VECTRON.SYSTEM.INFO LOAD_NOW//:ESP32_CMD</span>
-        <span id="lf-host">192.168.4.1</span>
+        <div>CORE &bull; Tensilica Xtensa Dual-Core 240MHz &bull; LittleFS Flash</div>
+        <div>SHA-256 + 16B Salt Provisioning &bull; RTC Lockout Memory</div>
       </footer>
     </div>
   </section>
 
   <!-- ===================== SCREEN: ACCESS GRANTED ===================== -->
   <section id="screen-granted" class="screen">
-    <div class="ag-grid"></div>
-    <div class="ag-frame">
-      <i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>
-      <h1 class="ag-text"><span>ACCESS</span><span>GRANTED</span></h1>
+    <div class="ag-wrap">
+      <div class="ag-box">
+        <div class="ag-header">
+          <span class="ag-badge">CLEARANCE VERIFIED</span>
+          <span class="ag-code">SEC-ID: 0x7E3F</span>
+        </div>
+        <div class="ag-main">ACCESS GRANTED</div>
+        <div class="ag-sub">VECTRON-32 &bull; INSTRUMENTATION CONSOLE</div>
+        <div class="ag-noise" id="ag-noise" aria-hidden="true"></div>
+      </div>
     </div>
-    <div class="ag-noise" id="ag-noise" aria-hidden="true"></div>
   </section>
 
   <!-- ===================== SCREEN: BOOT ===================== -->
@@ -103,164 +114,588 @@
       </header>
       <div class="d-rule"></div>
 
+      <!-- Tab Navigation Bar -->
+      <nav class="d-tabs" id="d-tabs" role="tablist">
+        <button class="tab-btn active" data-tab="scada" role="tab" aria-selected="true" id="tab-btn-scada">
+          <span class="tab-led"></span>[ TAB 1: SCADA CONSOLE ]
+        </button>
+        <button class="tab-btn" data-tab="memory" role="tab" aria-selected="false" id="tab-btn-memory">
+          <span class="tab-led"></span>[ TAB 2: SILICON MEMORY MAP ]
+        </button>
+        <button class="tab-btn" data-tab="pinout" role="tab" aria-selected="false" id="tab-btn-pinout">
+          <span class="tab-led"></span>[ TAB 3: BOARD &amp; PINOUT INSPECTOR ]
+        </button>
+      </nav>
+
       <div id="d-banner" class="d-banner" hidden></div>
 
-      <div class="d-grid">
+      <!-- ==================== TAB VIEW 1: SCADA CONSOLE ==================== -->
+      <div id="view-scada" class="tab-view active">
+        <div class="d-grid">
 
-        <!-- COL 1: System Telemetry + Oscilloscope + RTOS Health -->
-        <div class="d-col">
+          <!-- COL 1: System Telemetry + Oscilloscope + WiFi -->
+          <div class="d-col">
 
-          <!-- System Telemetry -->
-          <div class="mod" id="mod-sys">
-            <div class="mod-title"><span class="mod-led led-pulse"></span>SYSTEM TELEMETRY</div>
-            <dl class="kv">
-              <dt>UPTIME</dt><dd data-k="uptime">--</dd>
-              <dt>HEAP FREE</dt><dd data-k="heap">--</dd>
-              <dt>HEAP MIN</dt><dd data-k="heap-min">--</dd>
-              <dt>HEAP FRAG</dt><dd data-k="heap-frag">--</dd>
-              <dt>CHIP TEMP</dt><dd data-k="temp">--</dd>
-              <dt>WS CLIENTS</dt><dd data-k="ws-clients">--</dd>
-              <dt>TEL WATERMARK</dt><dd data-k="watermark">--</dd>
-            </dl>
-          </div>
+            <!-- System Telemetry -->
+            <div class="mod" id="mod-sys">
+              <div class="mod-title"><span class="mod-led led-pulse"></span>SYSTEM TELEMETRY</div>
+              <dl class="kv">
+                <dt>UPTIME</dt><dd data-k="uptime">--</dd>
+                <dt>HEAP FREE</dt><dd data-k="heap">--</dd>
+                <dt>HEAP MIN</dt><dd data-k="heap-min">--</dd>
+                <dt>HEAP FRAG</dt><dd data-k="heap-frag">--</dd>
+                <dt>CHIP TEMP</dt><dd data-k="temp">--</dd>
+                <dt>WS CLIENTS</dt><dd data-k="ws-clients">--</dd>
+                <dt>TEL WATERMARK</dt><dd data-k="watermark">--</dd>
+              </dl>
+            </div>
 
-          <!-- FreeRTOS & Memory Health Card -->
-          <div class="mod" id="mod-rtos">
-            <div class="mod-title"><span class="mod-led led-pulse led-amber"></span>FREERTOS &amp; MEMORY HEALTH</div>
-            <dl class="kv">
-              <dt>CORE 0 NET TASK</dt><dd data-k="net-watermark">-- B</dd>
-              <dt>CORE 1 TEL TASK</dt><dd data-k="tel-watermark">-- B</dd>
-              <dt>HEAP FRAGMENT</dt><dd data-k="rtos-frag">--</dd>
-              <dt>CPU FREQUENCY</dt><dd data-k="rtos-cpu">240 MHz</dd>
-            </dl>
-            <div class="fs-bar-wrap">
-              <div class="fs-bar-meta">
-                <span>LITTLEFS STORAGE</span>
-                <span id="fs-meta-text">-- / -- KB</span>
+            <!-- Oscilloscope -->
+            <div class="mod" id="mod-osc">
+              <div class="mod-title"><span class="mod-led led-pulse led-amber"></span>OSCILLOSCOPE RETICLE</div>
+              <div class="osc-container">
+                <canvas id="telemetry-chart" aria-label="Telemetry oscilloscope"></canvas>
               </div>
-              <div class="fs-bar-track">
-                <div class="fs-bar-fill" id="fs-bar-fill" style="width: 0%"></div>
+              <div class="osc-legend">
+                <span class="osc-leg osc-leg-heap">&#9632; HEAP</span>
+                <span class="osc-leg osc-leg-temp">&#9632; TEMP</span>
+                <span class="osc-leg osc-leg-clients">&#9632; CLIENTS</span>
               </div>
             </div>
+
+            <!-- WiFi -->
+            <div class="mod" id="mod-wifi">
+              <div class="mod-title"><span class="mod-led led-pulse"></span>WI-FI ACCESS POINT</div>
+              <dl class="kv">
+                <dt>SSID</dt><dd data-k="w-ssid">--</dd>
+                <dt>IP</dt><dd data-k="w-ip">--</dd>
+                <dt>CHANNEL</dt><dd data-k="w-ch">--</dd>
+                <dt>CLIENTS</dt><dd data-k="w-clients">--</dd>
+                <dt>TX LEVEL</dt><dd data-k="w-tx">--</dd>
+              </dl>
+              <div class="prompt sub">vectron@esp32:~$ <span>wifi --txpower</span></div>
+              <div class="chips" id="tx-chips">
+                <button class="chip" data-level="0">[LOW 8.5dBm]</button>
+                <button class="chip" data-level="1">[MED 13dBm]</button>
+                <button class="chip" data-level="2">[HIGH 19.5dBm]</button>
+              </div>
+            </div>
+
           </div>
 
-          <!-- Oscilloscope -->
-          <div class="mod" id="mod-osc">
-            <div class="mod-title"><span class="mod-led led-pulse led-amber"></span>OSCILLOSCOPE RETICLE</div>
-            <div class="osc-container">
-              <canvas id="telemetry-chart" aria-label="Telemetry oscilloscope"></canvas>
+          <!-- COL 2: GPIO + I2C + BLE -->
+          <div class="d-col">
+
+            <!-- GPIO Outputs -->
+            <div class="mod" id="mod-gpio-out">
+              <div class="mod-title"><span class="mod-led led-pulse led-amber"></span>GPIO OUTPUTS</div>
+              <div id="gpio-outputs" class="gpio-list">
+                <div class="gpio-empty">Waiting for telemetry&hellip;</div>
+              </div>
             </div>
-            <div class="osc-legend">
-              <span class="osc-leg osc-leg-heap">&#9632; HEAP</span>
-              <span class="osc-leg osc-leg-temp">&#9632; TEMP</span>
-              <span class="osc-leg osc-leg-clients">&#9632; CLIENTS</span>
+
+            <!-- GPIO Inputs -->
+            <div class="mod" id="mod-gpio-in">
+              <div class="mod-title"><span class="mod-led led-pulse"></span>GPIO INPUTS</div>
+              <div id="gpio-inputs" class="gpio-list">
+                <div class="gpio-empty">Waiting for telemetry&hellip;</div>
+              </div>
             </div>
+
+            <!-- I2C Bus Map -->
+            <div class="mod" id="mod-i2c">
+              <div class="mod-title"><span class="mod-led led-pulse"></span>I2C BUS MAP</div>
+              <div class="i2c-meta" id="i2c-meta">SDA &mdash; / SCL &mdash;</div>
+              <div id="i2c-map" class="i2c-map">
+                <div class="gpio-empty">Waiting for telemetry&hellip;</div>
+              </div>
+              <div class="i2c-actions">
+                <button class="btn" id="btn-i2c">[ SCAN BUS ]</button>
+                <span class="i2c-state" id="i2c-state"></span>
+              </div>
+            </div>
+
+            <!-- BLE -->
+            <div class="mod" id="mod-ble">
+              <div class="mod-title"><span class="mod-led led-pulse"></span>BLUETOOTH LE</div>
+              <dl class="kv">
+                <dt>DEVICE</dt><dd data-k="ble-name">--</dd>
+                <dt>ADVERTISING</dt><dd data-k="ble-adv">--</dd>
+                <dt>CONNECTIONS</dt><dd data-k="ble-conn">--</dd>
+              </dl>
+            </div>
+
           </div>
 
-          <!-- WiFi -->
-          <div class="mod" id="mod-wifi">
-            <div class="mod-title"><span class="mod-led led-pulse"></span>WI-FI ACCESS POINT</div>
+          <!-- COL 3: Diagnostics + System Control + Readout -->
+          <div class="d-col d-col-right">
+
+            <!-- Live Readout -->
+            <div class="mod readout-mod">
+              <div class="ro-big" id="ro-uptime">00:00:00</div>
+              <div class="ro-small">UPTIME</div>
+              <div class="ro-line"><span>LINK</span><b id="ro-link">--</b></div>
+              <div class="ro-line"><span>WS STATE</span><b id="ro-ws-state">DISCONNECTED</b></div>
+              <div class="ro-line"><span>HEAP</span><b id="ro-heap">-- KB</b></div>
+              <div class="ro-line"><span>TEMP</span><b id="ro-temp">-- &deg;C</b></div>
+            </div>
+
+            <!-- Diagnostics Console -->
+            <div class="mod" id="mod-diag">
+              <div class="mod-title"><span class="mod-led led-pulse led-amber"></span>DIAGNOSTICS CONSOLE</div>
+              <div class="diag-filters">
+                <button class="diag-filter active" data-filter="INFO">[INFO]</button>
+                <button class="diag-filter active" data-filter="WARN">[WARN]</button>
+                <button class="diag-filter active" data-filter="ERROR">[ERROR]</button>
+                <button class="diag-filter active" data-filter="BUS">[BUS]</button>
+              </div>
+              <div id="diag-console" class="diag-console"></div>
+            </div>
+
+            <!-- System Control -->
+            <div class="mod" id="mod-ctl">
+              <div class="mod-title"><span class="mod-led led-pulse led-red"></span>SYSTEM CONTROL</div>
+              <div class="prompt">vectron@esp32:~$ <span>reboot</span></div>
+              <div class="reboot-row">
+                <span class="yn" id="reboot-yn">[ y / n ]</span>
+                <button class="chip" id="btn-reboot-y">[y]</button>
+                <button class="chip" id="btn-reboot-n" hidden>[n]</button>
+              </div>
+              <div id="reboot-countdown" class="reboot-countdown" hidden></div>
+            </div>
+
+          </div>
+
+        </div><!-- /d-grid -->
+      </div><!-- /view-scada -->
+
+      <!-- ==================== TAB VIEW 2: SILICON MEMORY MAP ==================== -->
+      <div id="view-memory" class="tab-view">
+        <div class="mem-grid">
+
+          <!-- Card 1: Internal SRAM Architecture -->
+          <div class="mod mem-mod">
+            <div class="mod-title"><span class="mod-led led-pulse"></span>INTERNAL SRAM (DRAM / HEAP PROFILER)</div>
             <dl class="kv">
-              <dt>SSID</dt><dd data-k="w-ssid">--</dd>
-              <dt>IP</dt><dd data-k="w-ip">--</dd>
-              <dt>CHANNEL</dt><dd data-k="w-ch">--</dd>
-              <dt>CLIENTS</dt><dd data-k="w-clients">--</dd>
-              <dt>TX LEVEL</dt><dd data-k="w-tx">--</dd>
+              <dt>TOTAL DRAM</dt><dd data-k="mem-heap-total">320.0 KB</dd>
+              <dt>FREE HEAP</dt><dd data-k="mem-heap-free">-- KB</dd>
+              <dt>USED HEAP</dt><dd data-k="mem-heap-used">-- KB</dd>
+              <dt>MIN WATERMARK</dt><dd data-k="mem-heap-min">-- KB</dd>
+              <dt>MAX BLOCK</dt><dd data-k="mem-heap-max">-- KB</dd>
+              <dt>FRAGMENTATION</dt><dd data-k="mem-heap-frag">-- %</dd>
             </dl>
-            <div class="prompt sub">vectron@esp32:~$ <span>wifi --txpower</span></div>
-            <div class="chips" id="tx-chips">
-              <button class="chip" data-level="0">[LOW 8.5dBm]</button>
-              <button class="chip" data-level="1">[MED 13dBm]</button>
-              <button class="chip" data-level="2">[HIGH 19.5dBm]</button>
+
+            <div class="mem-meter-wrap">
+              <div class="mem-meter-head">
+                <span>DRAM HEAP UTILIZATION</span>
+                <span id="mem-heap-pct">0%</span>
+              </div>
+              <div class="mem-bar-track">
+                <div class="mem-bar-fill" id="mem-heap-bar" style="width: 0%"></div>
+              </div>
+              <div class="mem-meter-foot">
+                <span id="mem-heap-detail">-- FREE / -- TOTAL</span>
+              </div>
             </div>
           </div>
 
-        </div>
+          <!-- Card 2: NOR Flash Partition Map -->
+          <div class="mod mem-mod">
+            <div class="mod-title"><span class="mod-led led-pulse led-amber"></span>NOR FLASH PARTITION MAP (4 MB SPI FLASH)</div>
 
-        <!-- COL 2: GPIO + I2C + Controls -->
-        <div class="d-col">
+            <!-- Flash Partition Visual Strip -->
+            <div class="flash-strip-wrap">
+              <div class="flash-strip">
+                <div class="flash-seg seg-boot" style="width: 3%" title="Bootloader (0x1000)">BOOT</div>
+                <div class="flash-seg seg-nvs" style="width: 4%" title="NVS Partition (0x9000)">NVS</div>
+                <div class="flash-seg seg-app" style="width: 68%" title="huge_app Partition (3.1 MB)">APP (huge_app 3.1MB)</div>
+                <div class="flash-seg seg-fs" style="width: 25%" title="LittleFS Partition (1.0 MB)">LITTLEFS (1.0MB)</div>
+              </div>
+              <div class="flash-legend">
+                <span>[0x000000]</span>
+                <span>[0x100000]</span>
+                <span>[0x300000]</span>
+                <span>[0x400000]</span>
+              </div>
+            </div>
 
-          <!-- GPIO Outputs -->
-          <div class="mod" id="mod-gpio-out">
-            <div class="mod-title"><span class="mod-led led-pulse led-amber"></span>GPIO OUTPUTS</div>
-            <div id="gpio-outputs" class="gpio-list">
-              <div class="gpio-empty">Waiting for telemetry&hellip;</div>
+            <!-- Application Partition Details -->
+            <div class="mem-meter-wrap">
+              <div class="mem-meter-head">
+                <span>huge_app BINARY (3.1 MB MAX)</span>
+                <span id="mem-app-pct">--%</span>
+              </div>
+              <div class="mem-bar-track">
+                <div class="mem-bar-fill fill-app" id="mem-app-bar" style="width: 38%"></div>
+              </div>
+              <div class="mem-meter-foot">
+                <span id="mem-app-text">-- KB USED / 3145 KB ALLOCATED</span>
+              </div>
+            </div>
+
+            <!-- LittleFS Partition Details -->
+            <div class="mem-meter-wrap">
+              <div class="mem-meter-head">
+                <span>LITTLEFS ASSETS (1.0 MB MAX)</span>
+                <span id="mem-fs-pct">--%</span>
+              </div>
+              <div class="mem-bar-track">
+                <div class="mem-bar-fill fill-fs" id="mem-fs-bar" style="width: 0%"></div>
+              </div>
+              <div class="mem-meter-foot">
+                <span id="mem-fs-text">-- KB USED / 1024 KB ALLOCATED</span>
+              </div>
+            </div>
+
+            <!-- NVS & RTC Info -->
+            <div class="nvs-status-box">
+              <div class="nvs-item">
+                <span class="nvs-lbl">NVS NAMESPACE:</span>
+                <span class="nvs-val">"vectron" (SHA256+Salt)</span>
+              </div>
+              <div class="nvs-item">
+                <span class="nvs-lbl">NVS STORAGE STATUS:</span>
+                <span class="nvs-val val-ok">COMMITTED / ACTIVE</span>
+              </div>
             </div>
           </div>
 
-          <!-- GPIO Inputs -->
-          <div class="mod" id="mod-gpio-in">
-            <div class="mod-title"><span class="mod-led led-pulse"></span>GPIO INPUTS</div>
-            <div id="gpio-inputs" class="gpio-list">
-              <div class="gpio-empty">Waiting for telemetry&hellip;</div>
+          <!-- Card 3: FreeRTOS Task Headroom & RTC Memory -->
+          <div class="mod mem-mod">
+            <div class="mod-title"><span class="mod-led led-pulse led-red"></span>FREERTOS DUAL-CORE TASK HEADROOM</div>
+
+            <!-- Core 0 Network Task -->
+            <div class="mem-meter-wrap">
+              <div class="mem-meter-head">
+                <span>CORE 0 &bull; vNetworkTask (PRIO 5, 8KB STACK)</span>
+                <span id="mem-task-net-val">-- B</span>
+              </div>
+              <div class="mem-bar-track">
+                <div class="mem-bar-fill fill-task-net" id="mem-task-net-bar" style="width: 50%"></div>
+              </div>
+              <div class="mem-meter-foot">
+                <span>STACK HEADROOM (uxTaskGetStackHighWaterMark)</span>
+              </div>
+            </div>
+
+            <!-- Core 1 Telemetry Task -->
+            <div class="mem-meter-wrap">
+              <div class="mem-meter-head">
+                <span>CORE 1 &bull; vTelemetryTask (PRIO 4, 8KB STACK)</span>
+                <span id="mem-task-tel-val">-- B</span>
+              </div>
+              <div class="mem-bar-track">
+                <div class="mem-bar-fill fill-task-tel" id="mem-task-tel-bar" style="width: 50%"></div>
+              </div>
+              <div class="mem-meter-foot">
+                <span>STACK HEADROOM (uxTaskGetStackHighWaterMark)</span>
+              </div>
+            </div>
+
+            <!-- RTC Resilience Diagnostics -->
+            <div class="rtc-status-card">
+              <div class="mod-title sub-title"><span class="mod-led led-pulse"></span>RTC_DATA_ATTR PERSISTENCE</div>
+              <dl class="kv">
+                <dt>RTC FAIL COUNT</dt><dd data-k="rtc-fails">0 / 5 (NORMAL)</dd>
+                <dt>RTC LOCKOUT</dt><dd data-k="rtc-lock">UNLOCKED</dd>
+                <dt>POWER LOSS DEFENSE</dt><dd class="val-ok">RTC SLOW SRAM ACTIVE</dd>
+                <dt>CPU FREQUENCY</dt><dd data-k="mem-cpu">240 MHz (Xtensa LX6)</dd>
+              </dl>
+            </div>
+
+          </div>
+
+        </div><!-- /mem-grid -->
+      </div><!-- /view-memory -->
+
+      <!-- ==================== TAB VIEW 3: BOARD & PINOUT INSPECTOR ==================== -->
+      <div id="view-pinout" class="tab-view">
+        <div class="pinout-layout">
+
+          <!-- Left / Top: Interactive Vector ESP32 Board -->
+          <div class="mod pinout-board-mod">
+            <div class="mod-title"><span class="mod-led led-pulse"></span>ESP32-WROOM-32 DEVKIT VECTOR PINOUT</div>
+
+            <div class="board-svg-container">
+              <svg id="esp32-board-svg" viewBox="0 0 460 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ESP32 DevKit Board Diagram">
+                <defs>
+                  <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur"/>
+                    <feMerge>
+                      <feMergeNode in="blur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                  <linearGradient id="shield-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#0a2a16"/>
+                    <stop offset="100%" stop-color="#041209"/>
+                  </linearGradient>
+                </defs>
+
+                <!-- PCB Base -->
+                <rect x="50" y="20" width="360" height="520" rx="14" fill="#020e06" stroke="#00cc66" stroke-width="2"/>
+                <rect x="56" y="26" width="348" height="508" rx="10" fill="none" stroke="#003314" stroke-width="1" stroke-dasharray="4,4"/>
+
+                <!-- Mounting Holes -->
+                <circle cx="72" cy="42" r="7" fill="#050e08" stroke="#00ff88" stroke-width="1.5"/>
+                <circle cx="388" cy="42" r="7" fill="#050e08" stroke="#00ff88" stroke-width="1.5"/>
+                <circle cx="72" cy="518" r="7" fill="#050e08" stroke="#00ff88" stroke-width="1.5"/>
+                <circle cx="388" cy="518" r="7" fill="#050e08" stroke="#00ff88" stroke-width="1.5"/>
+
+                <!-- RF Module (WROOM-32) -->
+                <rect x="110" y="32" width="240" height="190" rx="6" fill="url(#shield-grad)" stroke="#00ff88" stroke-width="1.5"/>
+                <!-- Antenna Trace Area -->
+                <rect x="110" y="32" width="240" height="42" fill="#010603" stroke="#00aa55" stroke-width="1"/>
+                <path d="M125,56 L140,56 L140,42 L155,42 L155,56 L170,56 L170,42 L185,42 L185,56 L200,56 L200,42 L215,42 L215,56 L230,56 L230,42 L245,42 L245,56 L260,56 L260,42 L275,42 L275,56 L290,56 L290,42 L305,42 L305,56 L335,56"
+                      fill="none" stroke="#ffaa00" stroke-width="2"/>
+
+                <!-- Metal Shield Can -->
+                <rect x="120" y="80" width="220" height="134" rx="4" fill="#082111" stroke="#00ff88" stroke-width="1"/>
+                <text x="230" y="130" font-family="monospace" font-size="14" font-weight="700" fill="#00ff88" text-anchor="middle" letter-spacing="2">ESP-WROOM-32</text>
+                <text x="230" y="152" font-family="monospace" font-size="10" fill="#00cc66" text-anchor="middle">Tensilica Xtensa Dual 240MHz</text>
+                <text x="230" y="172" font-family="monospace" font-size="9" fill="#008844" text-anchor="middle">VECTRON-32 SCADA ENGINE</text>
+
+                <!-- Micro-USB Port -->
+                <rect x="190" y="515" width="80" height="30" rx="3" fill="#05140a" stroke="#00ff88" stroke-width="1.5"/>
+                <rect x="205" y="522" width="50" height="16" rx="2" fill="#000" stroke="#00aa55" stroke-width="1"/>
+
+                <!-- Push Buttons -->
+                <!-- EN Button (Reset) -->
+                <g id="svg-btn-en" transform="translate(80, 460)">
+                  <rect x="0" y="0" width="34" height="34" rx="3" fill="#0d2417" stroke="#00cc66" stroke-width="1"/>
+                  <circle cx="17" cy="17" r="9" fill="#003314" stroke="#00ff88" stroke-width="1"/>
+                  <text x="17" y="44" font-family="monospace" font-size="9" fill="#00ff88" text-anchor="middle">EN</text>
+                </g>
+
+                <!-- BOOT Button (GPIO 0) -->
+                <g id="svg-btn-boot" transform="translate(346, 460)">
+                  <rect x="0" y="0" width="34" height="34" rx="3" fill="#0d2417" stroke="#00e5ff" stroke-width="1"/>
+                  <circle cx="17" cy="17" r="9" fill="#003314" stroke="#00e5ff" stroke-width="1.5" class="pin-svg-pulse" id="svg-circle-boot"/>
+                  <text x="17" y="44" font-family="monospace" font-size="9" fill="#00e5ff" text-anchor="middle">BOOT(0)</text>
+                </g>
+
+                <!-- On-board Status LED (GPIO 2) -->
+                <g id="svg-led-box" transform="translate(170, 470)">
+                  <rect x="0" y="0" width="22" height="16" rx="2" fill="#081e10" stroke="#00ff66" stroke-width="1"/>
+                  <circle cx="11" cy="8" r="4" fill="#00ff66" id="svg-led-d2" filter="url(#neon-glow)"/>
+                  <text x="11" y="26" font-family="monospace" font-size="8" fill="#00ff66" text-anchor="middle">LED 2</text>
+                </g>
+
+                <!-- Power LED (3V3) -->
+                <g id="svg-pwr-box" transform="translate(268, 470)">
+                  <rect x="0" y="0" width="22" height="16" rx="2" fill="#1e0808" stroke="#ff3333" stroke-width="1"/>
+                  <circle cx="11" cy="8" r="4" fill="#ff3333"/>
+                  <text x="11" y="26" font-family="monospace" font-size="8" fill="#ff3333" text-anchor="middle">PWR</text>
+                </g>
+
+                <!-- ================= LEFT PIN HEADER (1-19) ================= -->
+                <!-- x=52 to x=68 for pads, text x=74 -->
+                <!-- Pins: 3V3, EN, VP/36, VN/39, 34, 35, 32, 33, 25, 26, 27, 14, 12, GND, 13, 9, 10, 11, 5V -->
+                <g id="svg-left-header" transform="translate(0, 0)">
+                  <!-- 1: 3V3 -->
+                  <g class="svg-pin pin-pwr" id="p-3v3"><rect x="52" y="70" width="16" height="12" fill="#ffaa00" rx="1"/><text x="74" y="80">3V3</text></g>
+                  <!-- 2: EN -->
+                  <g class="svg-pin pin-ctl" id="p-en"><rect x="52" y="88" width="16" height="12" fill="#00cc66" rx="1"/><text x="74" y="98">EN</text></g>
+                  <!-- 3: VP / GPIO 36 -->
+                  <g class="svg-pin pin-in" id="p-36"><rect x="52" y="106" width="16" height="12" fill="#00e5ff" rx="1"/><text x="74" y="116">VP [36]</text></g>
+                  <!-- 4: VN / GPIO 39 -->
+                  <g class="svg-pin pin-in" id="p-39"><rect x="52" y="124" width="16" height="12" fill="#00e5ff" rx="1"/><text x="74" y="134">VN [39]</text></g>
+                  <!-- 5: GPIO 34 -->
+                  <g class="svg-pin pin-in" id="p-34"><rect x="52" y="142" width="16" height="12" fill="#00e5ff" rx="1"/><text x="74" y="152">D34 [IN]</text></g>
+                  <!-- 6: GPIO 35 -->
+                  <g class="svg-pin pin-in" id="p-35"><rect x="52" y="160" width="16" height="12" fill="#00e5ff" rx="1"/><text x="74" y="170">D35 [IN]</text></g>
+                  <!-- 7: GPIO 32 -->
+                  <g class="svg-pin pin-safe" id="p-32"><rect x="52" y="178" width="16" height="12" fill="#1c4728" rx="1"/><text x="74" y="188">D32</text></g>
+                  <!-- 8: GPIO 33 -->
+                  <g class="svg-pin pin-safe" id="p-33"><rect x="52" y="196" width="16" height="12" fill="#1c4728" rx="1"/><text x="74" y="206">D33</text></g>
+                  <!-- 9: GPIO 25 -->
+                  <g class="svg-pin pin-safe" id="p-25"><rect x="52" y="214" width="16" height="12" fill="#1c4728" rx="1"/><text x="74" y="224">D25</text></g>
+                  <!-- 10: GPIO 26 -->
+                  <g class="svg-pin pin-safe" id="p-26"><rect x="52" y="232" width="16" height="12" fill="#1c4728" rx="1"/><text x="74" y="242">D26</text></g>
+                  <!-- 11: GPIO 27 -->
+                  <g class="svg-pin pin-safe" id="p-27"><rect x="52" y="250" width="16" height="12" fill="#1c4728" rx="1"/><text x="74" y="260">D27</text></g>
+                  <!-- 12: GPIO 14 -->
+                  <g class="svg-pin pin-safe" id="p-14"><rect x="52" y="268" width="16" height="12" fill="#1c4728" rx="1"/><text x="74" y="278">D14</text></g>
+                  <!-- 13: GPIO 12 [STRAPPING BLOCKED] -->
+                  <g class="svg-pin pin-blocked" id="p-12"><rect x="52" y="286" width="16" height="12" fill="#ff3333" rx="1"/><text x="74" y="296" class="lbl-blocked">D12 [STRAP]</text></g>
+                  <!-- 14: GND -->
+                  <g class="svg-pin pin-gnd" id="p-gnd1"><rect x="52" y="304" width="16" height="12" fill="#003314" rx="1"/><text x="74" y="314">GND</text></g>
+                  <!-- 15: GPIO 13 -->
+                  <g class="svg-pin pin-safe" id="p-13"><rect x="52" y="322" width="16" height="12" fill="#1c4728" rx="1"/><text x="74" y="332">D13</text></g>
+                  <!-- 16: GPIO 9 [FLASH SPI BLOCKED] -->
+                  <g class="svg-pin pin-blocked" id="p-9"><rect x="52" y="340" width="16" height="12" fill="#ff3333" rx="1"/><text x="74" y="350" class="lbl-blocked">D9 [FLASH]</text></g>
+                  <!-- 17: GPIO 10 [FLASH SPI BLOCKED] -->
+                  <g class="svg-pin pin-blocked" id="p-10"><rect x="52" y="358" width="16" height="12" fill="#ff3333" rx="1"/><text x="74" y="368" class="lbl-blocked">D10 [FLASH]</text></g>
+                  <!-- 18: GPIO 11 [FLASH SPI BLOCKED] -->
+                  <g class="svg-pin pin-blocked" id="p-11"><rect x="52" y="376" width="16" height="12" fill="#ff3333" rx="1"/><text x="74" y="386" class="lbl-blocked">D11 [FLASH]</text></g>
+                  <!-- 19: 5V / VIN -->
+                  <g class="svg-pin pin-pwr" id="p-5v"><rect x="52" y="394" width="16" height="12" fill="#ffaa00" rx="1"/><text x="74" y="404">5V [VIN]</text></g>
+                </g>
+
+                <!-- ================= RIGHT PIN HEADER (20-38) ================= -->
+                <!-- x=392 to x=408 for pads, text x=386 text-anchor="end" -->
+                <!-- Pins: GND, 23, 22(SCL), 1(TX0), 3(RX0), 21(SDA), 19, 18, 5, 17, 16, 4, 2, 15, 8, 7, 6, CMD, CLK -->
+                <g id="svg-right-header" transform="translate(0, 0)">
+                  <!-- 20: GND -->
+                  <g class="svg-pin pin-gnd" id="p-gnd2"><rect x="392" y="70" width="16" height="12" fill="#003314" rx="1"/><text x="386" y="80" text-anchor="end">GND</text></g>
+                  <!-- 21: GPIO 23 -->
+                  <g class="svg-pin pin-safe" id="p-23"><rect x="392" y="88" width="16" height="12" fill="#1c4728" rx="1"/><text x="386" y="98" text-anchor="end">D23</text></g>
+                  <!-- 22: GPIO 22 [I2C SCL] -->
+                  <g class="svg-pin pin-i2c" id="p-22"><rect x="392" y="106" width="16" height="12" fill="#0088cc" rx="1"/><text x="386" y="116" text-anchor="end">D22 [I2C SCL]</text></g>
+                  <!-- 23: GPIO 1 [UART0 TX BLOCKED] -->
+                  <g class="svg-pin pin-blocked" id="p-1"><rect x="392" y="124" width="16" height="12" fill="#ff3333" rx="1"/><text x="386" y="134" text-anchor="end" class="lbl-blocked">TX0 [UART]</text></g>
+                  <!-- 24: GPIO 3 [UART0 RX BLOCKED] -->
+                  <g class="svg-pin pin-blocked" id="p-3"><rect x="392" y="142" width="16" height="12" fill="#ff3333" rx="1"/><text x="386" y="152" text-anchor="end" class="lbl-blocked">RX0 [UART]</text></g>
+                  <!-- 25: GPIO 21 [I2C SDA] -->
+                  <g class="svg-pin pin-i2c" id="p-21"><rect x="392" y="160" width="16" height="12" fill="#0088cc" rx="1"/><text x="386" y="170" text-anchor="end">D21 [I2C SDA]</text></g>
+                  <!-- 26: GPIO 19 -->
+                  <g class="svg-pin pin-safe" id="p-19"><rect x="392" y="178" width="16" height="12" fill="#1c4728" rx="1"/><text x="386" y="188" text-anchor="end">D19</text></g>
+                  <!-- 27: GPIO 18 -->
+                  <g class="svg-pin pin-safe" id="p-18"><rect x="392" y="196" width="16" height="12" fill="#1c4728" rx="1"/><text x="386" y="206" text-anchor="end">D18</text></g>
+                  <!-- 28: GPIO 5 -->
+                  <g class="svg-pin pin-safe" id="p-5"><rect x="392" y="214" width="16" height="12" fill="#1c4728" rx="1"/><text x="386" y="224" text-anchor="end">D5</text></g>
+                  <!-- 29: GPIO 17 -->
+                  <g class="svg-pin pin-safe" id="p-17"><rect x="392" y="232" width="16" height="12" fill="#1c4728" rx="1"/><text x="386" y="242" text-anchor="end">D17</text></g>
+                  <!-- 30: GPIO 16 [RELAY 1 OUTPUT] -->
+                  <g class="svg-pin pin-output" id="p-16"><rect x="392" y="250" width="16" height="12" fill="#00ff66" rx="1"/><text x="386" y="260" text-anchor="end">D16 [RELAY 1]</text></g>
+                  <!-- 31: GPIO 4 [RELAY 2 OUTPUT] -->
+                  <g class="svg-pin pin-output" id="p-4"><rect x="392" y="268" width="16" height="12" fill="#00ff66" rx="1"/><text x="386" y="278" text-anchor="end">D4 [RELAY 2]</text></g>
+                  <!-- 32: GPIO 2 [ONBOARD LED OUTPUT] -->
+                  <g class="svg-pin pin-output" id="p-2"><rect x="392" y="286" width="16" height="12" fill="#00ff66" rx="1"/><text x="386" y="296" text-anchor="end">D2 [ONBOARD LED]</text></g>
+                  <!-- 33: GPIO 15 [STRAPPING BLOCKED] -->
+                  <g class="svg-pin pin-blocked" id="p-15"><rect x="392" y="304" width="16" height="12" fill="#ff3333" rx="1"/><text x="386" y="314" text-anchor="end" class="lbl-blocked">D15 [STRAP]</text></g>
+                  <!-- 34: GPIO 8 [FLASH SPI BLOCKED] -->
+                  <g class="svg-pin pin-blocked" id="p-8"><rect x="392" y="322" width="16" height="12" fill="#ff3333" rx="1"/><text x="386" y="332" text-anchor="end" class="lbl-blocked">D8 [FLASH]</text></g>
+                  <!-- 35: GPIO 7 [FLASH SPI BLOCKED] -->
+                  <g class="svg-pin pin-blocked" id="p-7"><rect x="392" y="340" width="16" height="12" fill="#ff3333" rx="1"/><text x="386" y="350" text-anchor="end" class="lbl-blocked">D7 [FLASH]</text></g>
+                  <!-- 36: GPIO 6 [FLASH SPI BLOCKED] -->
+                  <g class="svg-pin pin-blocked" id="p-6"><rect x="392" y="358" width="16" height="12" fill="#ff3333" rx="1"/><text x="386" y="368" text-anchor="end" class="lbl-blocked">D6 [FLASH]</text></g>
+                  <!-- 37: CMD [FLASH SPI BLOCKED] -->
+                  <g class="svg-pin pin-blocked" id="p-cmd"><rect x="392" y="376" width="16" height="12" fill="#ff3333" rx="1"/><text x="386" y="386" text-anchor="end" class="lbl-blocked">CMD [FLASH]</text></g>
+                  <!-- 38: CLK [FLASH SPI BLOCKED] -->
+                  <g class="svg-pin pin-blocked" id="p-clk"><rect x="392" y="394" width="16" height="12" fill="#ff3333" rx="1"/><text x="386" y="404" text-anchor="end" class="lbl-blocked">CLK [FLASH]</text></g>
+                </g>
+              </svg>
             </div>
           </div>
 
-          <!-- I2C Bus Map -->
-          <div class="mod" id="mod-i2c">
-            <div class="mod-title"><span class="mod-led led-pulse"></span>I2C BUS MAP</div>
-            <div class="i2c-meta" id="i2c-meta">SDA — / SCL —</div>
-            <div id="i2c-map" class="i2c-map">
-              <div class="gpio-empty">Waiting for telemetry&hellip;</div>
+          <!-- Right / Bottom: Pinout Matrix & Inspector Table -->
+          <div class="mod pinout-table-mod">
+            <div class="mod-title"><span class="mod-led led-pulse led-amber"></span>SAFETY MATRIX &amp; LIVE PIN TELEMETRY</div>
+
+            <!-- Legend Badge Bar -->
+            <div class="pinout-badges">
+              <span class="badge badge-out">&#9632; ACTIVE OUTPUT</span>
+              <span class="badge badge-in">&#9632; ACTIVE INPUT</span>
+              <span class="badge badge-i2c">&#9632; I2C BUS (SDA/SCL)</span>
+              <span class="badge badge-blocked">&#9632; HARDWARE BLOCKED</span>
+              <span class="badge badge-safe">&#9632; SAFE EXPANSION</span>
             </div>
-            <div class="i2c-actions">
-              <button class="btn" id="btn-i2c">[ SCAN BUS ]</button>
-              <span class="i2c-state" id="i2c-state"></span>
+
+            <!-- Table -->
+            <div class="pin-table-scroll">
+              <table class="pin-table">
+                <thead>
+                  <tr>
+                    <th>GPIO</th>
+                    <th>LABEL</th>
+                    <th>TYPE</th>
+                    <th>STATE</th>
+                    <th>SAFETY STATUS</th>
+                  </tr>
+                </thead>
+                <tbody id="pin-table-body">
+                  <tr class="row-out" id="tbl-row-gpio2">
+                    <td><b>GPIO 2</b></td>
+                    <td>ONBOARD_LED</td>
+                    <td>OUTPUT</td>
+                    <td id="tbl-state-gpio2"><span class="chip-val chip-low">LOW</span></td>
+                    <td><span class="chip-ok">SAFE (ALLOWLIST)</span></td>
+                  </tr>
+                  <tr class="row-in" id="tbl-row-gpio0">
+                    <td><b>GPIO 0</b></td>
+                    <td>BOOT_BUTTON</td>
+                    <td>INPUT (PULLUP)</td>
+                    <td id="tbl-state-gpio0"><span class="chip-val chip-idle">IDLE (HIGH)</span></td>
+                    <td><span class="chip-ok">SAFE INPUT</span></td>
+                  </tr>
+                  <tr class="row-i2c">
+                    <td><b>GPIO 21</b></td>
+                    <td>I2C SDA</td>
+                    <td>BUS LINE</td>
+                    <td><span class="chip-val chip-i2c">400 kHz</span></td>
+                    <td><span class="chip-ok">i2cMutex GUARDED</span></td>
+                  </tr>
+                  <tr class="row-i2c">
+                    <td><b>GPIO 22</b></td>
+                    <td>I2C SCL</td>
+                    <td>BUS LINE</td>
+                    <td><span class="chip-val chip-i2c">400 kHz</span></td>
+                    <td><span class="chip-ok">i2cMutex GUARDED</span></td>
+                  </tr>
+                  <tr class="row-out" id="tbl-row-gpio4">
+                    <td><b>GPIO 4</b></td>
+                    <td>RELAY_1 / AUX</td>
+                    <td>OUTPUT (ACT-LOW)</td>
+                    <td id="tbl-state-gpio4"><span class="chip-val chip-low">OFF</span></td>
+                    <td><span class="chip-ok">SAFE (ALLOWLIST)</span></td>
+                  </tr>
+                  <tr class="row-out" id="tbl-row-gpio16">
+                    <td><b>GPIO 16</b></td>
+                    <td>RELAY_2 / AUX</td>
+                    <td>OUTPUT (ACT-LOW)</td>
+                    <td id="tbl-state-gpio16"><span class="chip-val chip-low">OFF</span></td>
+                    <td><span class="chip-ok">SAFE (ALLOWLIST)</span></td>
+                  </tr>
+                  <tr class="row-blocked">
+                    <td><b>GPIO 12</b></td>
+                    <td>MTDI / STRAP</td>
+                    <td>FORBIDDEN</td>
+                    <td><span class="chip-val chip-blocked">DISCONNECTED</span></td>
+                    <td><span class="chip-err">BLOCKED (FLASH VDD)</span></td>
+                  </tr>
+                  <tr class="row-blocked">
+                    <td><b>GPIO 15</b></td>
+                    <td>MTDO / STRAP</td>
+                    <td>FORBIDDEN</td>
+                    <td><span class="chip-val chip-blocked">DISCONNECTED</span></td>
+                    <td><span class="chip-err">BLOCKED (BOOT LOG)</span></td>
+                  </tr>
+                  <tr class="row-blocked">
+                    <td><b>GPIO 1, 3</b></td>
+                    <td>UART0 TX / RX</td>
+                    <td>SERIAL</td>
+                    <td><span class="chip-val chip-warn">115200 BAUD</span></td>
+                    <td><span class="chip-warn">SYSTEM SERIAL REQD</span></td>
+                  </tr>
+                  <tr class="row-blocked">
+                    <td><b>GPIO 6-11</b></td>
+                    <td>SPI FLASH BUS</td>
+                    <td>INTERNAL</td>
+                    <td><span class="chip-val chip-blocked">INTEGRATED</span></td>
+                    <td><span class="chip-err">SYSTEM CRITICAL</span></td>
+                  </tr>
+                  <tr class="row-safe">
+                    <td><b>GPIO 34-39</b></td>
+                    <td>GPI SENSOR</td>
+                    <td>INPUT ONLY</td>
+                    <td><span class="chip-val">ANALOG READY</span></td>
+                    <td><span class="chip-info">NO PULLUP RESISTOR</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Notes Callout -->
+            <div class="pinout-notes">
+              <div class="note-title">&#9670; HARDWARE ABSTRACTION POLICY:</div>
+              <p>Strapping pins (0, 2, 12, 15) must remain in known states during power-up. SPI flash pins (6-11) are physically wired to the 4MB NOR die and are strictly forbidden from manual GPIO multiplexing. All active relay channels feature initial active-low state suppression to eliminate boot relay chatter.</p>
             </div>
           </div>
 
-          <!-- BLE -->
-          <div class="mod" id="mod-ble">
-            <div class="mod-title"><span class="mod-led led-pulse"></span>BLUETOOTH LE</div>
-            <dl class="kv">
-              <dt>DEVICE</dt><dd data-k="ble-name">--</dd>
-              <dt>ADVERTISING</dt><dd data-k="ble-adv">--</dd>
-              <dt>CONNECTIONS</dt><dd data-k="ble-conn">--</dd>
-            </dl>
-          </div>
+        </div><!-- /pinout-layout -->
+      </div><!-- /view-pinout -->
 
-        </div>
-
-        <!-- COL 3: Diagnostics + System Control + Readout -->
-        <div class="d-col d-col-right">
-
-          <!-- Live Readout -->
-          <div class="mod readout-mod">
-            <div class="ro-big" id="ro-uptime">00:00:00</div>
-            <div class="ro-small">UPTIME</div>
-            <div class="ro-line"><span>LINK</span><b id="ro-link">--</b></div>
-            <div class="ro-line"><span>WS STATE</span><b id="ro-ws-state">DISCONNECTED</b></div>
-            <div class="ro-line"><span>HEAP</span><b id="ro-heap">-- KB</b></div>
-            <div class="ro-line"><span>TEMP</span><b id="ro-temp">-- °C</b></div>
-          </div>
-
-          <!-- Diagnostics Console -->
-          <div class="mod" id="mod-diag">
-            <div class="mod-title"><span class="mod-led led-pulse led-amber"></span>DIAGNOSTICS CONSOLE</div>
-            <div class="diag-filters">
-              <button class="diag-filter active" data-filter="INFO">[INFO]</button>
-              <button class="diag-filter active" data-filter="WARN">[WARN]</button>
-              <button class="diag-filter active" data-filter="ERROR">[ERROR]</button>
-              <button class="diag-filter active" data-filter="BUS">[BUS]</button>
-            </div>
-            <div id="diag-console" class="diag-console"></div>
-          </div>
-
-          <!-- System Control -->
-          <div class="mod" id="mod-ctl">
-            <div class="mod-title"><span class="mod-led led-pulse led-red"></span>SYSTEM CONTROL</div>
-            <div class="prompt">vectron@esp32:~$ <span>reboot</span></div>
-            <div class="reboot-row">
-              <span class="yn" id="reboot-yn">[ y / n ]</span>
-              <button class="chip" id="btn-reboot-y">[y]</button>
-              <button class="chip" id="btn-reboot-n" hidden>[n]</button>
-            </div>
-            <div id="reboot-countdown" class="reboot-countdown" hidden></div>
-          </div>
-
-        </div>
-
-      </div><!-- /d-grid -->
     </div><!-- /dash-frame -->
   </section>
 

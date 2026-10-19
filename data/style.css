@@ -621,6 +621,376 @@ a { color: var(--clr-primary); }
   }
 }
 
+/* ======================================================================
+   VIRTUAL TABS NAVIGATION & SPA LAYOUT
+   ====================================================================== */
+.d-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--clr-dim);
+  padding-bottom: 12px;
+}
+.tab-btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 8px 16px;
+  color: var(--clr-secondary);
+  background: rgba(0, 20, 10, 0.6);
+  border: 1px solid var(--clr-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all .2s ease;
+  user-select: none;
+}
+.tab-btn:hover {
+  color: var(--clr-primary);
+  border-color: var(--clr-secondary);
+  background: rgba(0, 255, 136, 0.08);
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.2);
+}
+.tab-btn.active {
+  color: #fff;
+  border-color: var(--clr-primary);
+  background: rgba(0, 255, 136, 0.16);
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.35);
+  text-shadow: 0 0 6px var(--clr-primary);
+}
+.tab-led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--clr-dim);
+  transition: background .2s, box-shadow .2s;
+}
+.tab-btn.active .tab-led {
+  background: var(--clr-primary);
+  box-shadow: 0 0 6px var(--clr-primary);
+}
+
+/* Tab Views */
+.tab-view {
+  display: none;
+}
+.tab-view.active {
+  display: block;
+  animation: tab-enter .22s ease-out;
+}
+@keyframes tab-enter {
+  0% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: none; }
+}
+
+/* ======================================================================
+   TAB 2: SILICON MEMORY MAP
+   ====================================================================== */
+.mem-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+@media (min-width: 800px) {
+  .mem-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (min-width: 1100px) {
+  .mem-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+.mem-mod {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mem-meter-wrap {
+  margin-top: 10px;
+  background: rgba(0, 10, 5, 0.4);
+  padding: 10px;
+  border: 1px dashed var(--clr-dim);
+}
+.mem-meter-head {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--clr-secondary);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.mem-bar-track {
+  height: 14px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid var(--clr-secondary);
+  padding: 1px;
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.9);
+}
+.mem-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: repeating-linear-gradient(90deg, #00aa55 0 6px, #00ff88 6px 12px);
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+  transition: width .35s ease;
+}
+.mem-bar-fill.fill-app {
+  background: repeating-linear-gradient(90deg, #0088cc 0 6px, #00d5ff 6px 12px);
+  box-shadow: 0 0 8px rgba(0, 213, 255, 0.5);
+}
+.mem-bar-fill.fill-fs {
+  background: repeating-linear-gradient(90deg, #cc8800 0 6px, #ffaa00 6px 12px);
+  box-shadow: 0 0 8px rgba(255, 170, 0, 0.5);
+}
+.mem-bar-fill.fill-task-net {
+  background: repeating-linear-gradient(90deg, #00aa77 0 6px, #00ffaa 6px 12px);
+}
+.mem-bar-fill.fill-task-tel {
+  background: repeating-linear-gradient(90deg, #aa8800 0 6px, #ffbb00 6px 12px);
+}
+
+.mem-meter-foot {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 10px;
+  color: var(--clr-secondary);
+  margin-top: 4px;
+}
+
+/* Flash Partition Strip */
+.flash-strip-wrap {
+  margin: 10px 0;
+}
+.flash-strip {
+  display: flex;
+  height: 24px;
+  background: #000;
+  border: 1px solid var(--clr-primary);
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.2);
+  overflow: hidden;
+}
+.flash-seg {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
+  border-right: 1px solid rgba(0, 0, 0, 0.8);
+}
+.seg-boot { background: #331100; color: #ff8844; }
+.seg-nvs  { background: #332200; color: #ffcc00; }
+.seg-app  { background: #002b40; color: #00e5ff; }
+.seg-fs   { background: #003318; color: #00ff88; }
+
+.flash-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: var(--clr-dim);
+  font-family: var(--mono);
+  margin-top: 4px;
+}
+
+.nvs-status-box {
+  border: 1px dashed var(--clr-dim);
+  padding: 8px 10px;
+  font-size: 11px;
+  background: rgba(0, 10, 5, 0.3);
+  margin-top: 8px;
+}
+.nvs-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.nvs-item:last-child { margin-bottom: 0; }
+.nvs-lbl { color: var(--clr-secondary); }
+.nvs-val { font-weight: 700; color: var(--clr-hi); }
+.val-ok  { color: var(--clr-primary); font-weight: 700; text-shadow: 0 0 4px var(--clr-primary); }
+
+.rtc-status-card {
+  border-top: 1px dashed var(--clr-dim);
+  margin-top: 10px;
+  padding-top: 8px;
+}
+.sub-title {
+  font-size: 10px;
+  margin-bottom: 8px;
+  color: var(--clr-secondary);
+}
+
+/* ======================================================================
+   TAB 3: BOARD & PINOUT INSPECTOR
+   ====================================================================== */
+.pinout-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+@media (min-width: 900px) {
+  .pinout-layout {
+    grid-template-columns: 460px 1fr;
+  }
+}
+
+.pinout-board-mod {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.board-svg-container {
+  width: 100%;
+  max-width: 440px;
+  background: #010603;
+  border: 1px solid var(--clr-dim);
+  padding: 10px;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9);
+}
+#esp32-board-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* SVG Pin Interactive Styling */
+.svg-pin {
+  cursor: pointer;
+  transition: opacity .2s;
+}
+.svg-pin:hover {
+  filter: url(#neon-glow);
+}
+.svg-pin text {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  fill: var(--clr-hi);
+  user-select: none;
+}
+.svg-pin.pin-output rect { fill: #00ff66; filter: drop-shadow(0 0 3px #00ff66); }
+.svg-pin.pin-output.on rect { fill: #ffffff; filter: drop-shadow(0 0 6px #00ff66); animation: pin-flash 1s infinite alternate; }
+.svg-pin.pin-input rect  { fill: #00e5ff; filter: drop-shadow(0 0 3px #00e5ff); }
+.svg-pin.pin-input.active rect { fill: #ffffff; filter: drop-shadow(0 0 7px #00e5ff); }
+.svg-pin.pin-i2c rect    { fill: #0088cc; }
+.svg-pin.pin-blocked rect{ fill: #ff3333; opacity: .7; }
+.svg-pin.pin-blocked text{ fill: #ff6666; text-decoration: line-through; }
+.svg-pin.pin-pwr rect    { fill: #ffaa00; }
+.svg-pin.pin-gnd rect    { fill: #113318; }
+.svg-pin.pin-safe rect   { fill: #1c4728; }
+
+.pin-svg-pulse {
+  animation: pulse-cyan 1.5s infinite;
+}
+@keyframes pulse-cyan {
+  0%, 100% { opacity: 1; stroke-width: 1.5; }
+  50% { opacity: 0.4; stroke-width: 3; }
+}
+@keyframes pin-flash {
+  from { filter: drop-shadow(0 0 4px #00ff66); }
+  to { filter: drop-shadow(0 0 10px #00ff66); }
+}
+
+/* Pinout Badges Bar */
+.pinout-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.badge {
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--mono);
+  padding: 3px 6px;
+  border: 1px solid var(--clr-dim);
+  background: rgba(0, 10, 5, 0.6);
+}
+.badge-out     { color: #00ff66; border-color: #00cc55; }
+.badge-in      { color: #00e5ff; border-color: #00aacc; }
+.badge-i2c     { color: #0088cc; border-color: #0066aa; }
+.badge-blocked { color: #ff5555; border-color: #cc3333; }
+.badge-safe    { color: #1c7a42; border-color: #1a4d2e; }
+
+/* Table */
+.pin-table-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--clr-dim);
+  background: rgba(0, 5, 2, 0.5);
+}
+.pin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  font-family: var(--mono);
+}
+.pin-table th {
+  position: sticky;
+  top: 0;
+  background: #020c06;
+  color: var(--clr-primary);
+  border-bottom: 2px solid var(--clr-secondary);
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.pin-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+  color: var(--clr-hi);
+}
+.pin-table tr:hover td {
+  background: rgba(0, 255, 136, 0.08);
+}
+.pin-table tr.highlight td {
+  background: rgba(0, 255, 136, 0.22);
+}
+
+.chip-val {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 2px;
+}
+.chip-low     { background: rgba(0, 255, 136, 0.12); color: var(--clr-secondary); }
+.chip-high    { background: #00ff66; color: #000; box-shadow: 0 0 6px #00ff66; }
+.chip-idle    { background: rgba(0, 229, 255, 0.12); color: #00e5ff; }
+.chip-active  { background: #00e5ff; color: #000; box-shadow: 0 0 6px #00e5ff; }
+.chip-i2c     { background: rgba(0, 136, 204, 0.2); color: #00aaff; }
+.chip-blocked { background: rgba(255, 51, 51, 0.2); color: #ff5555; text-decoration: line-through; }
+.chip-ok      { color: #00ff88; font-weight: 700; }
+.chip-warn    { color: #ffaa00; font-weight: 700; }
+.chip-err     { color: #ff3333; font-weight: 700; }
+.chip-info    { color: #88ccaa; }
+
+.pinout-notes {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--clr-secondary);
+  line-height: 1.4;
+  border-top: 1px dashed var(--clr-dim);
+  padding-top: 8px;
+}
+.note-title {
+  color: var(--clr-primary);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
 /* ------------------------------------------------------------------ animations */
 @keyframes blink { 50%{opacity:0} }
 @keyframes shake {

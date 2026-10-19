@@ -570,6 +570,12 @@ function handleTelemetry(d) {
     $$('#tx-chips .chip').forEach(c => c.classList.toggle('on', +c.dataset.level === d.wifi.txLevel));
   }
 
+  // Update Tab 2: Silicon Memory Map
+  updateMemoryMap(d);
+
+  // Update Tab 3: Board & Pinout Inspector
+  updatePinoutInspector(d);
+
   banner(null);
 }
 
@@ -861,6 +867,177 @@ function renderI2c(i2c) {
 }
 
 // ============================================================
+// 10B. SILICON MEMORY MAP UPDATER
+// ============================================================
+function updateMemoryMap(d) {
+  // SRAM / DRAM heap metrics
+  const heapTotal = d.heapTotal || 327680; // 320 KB default
+  const heapFree  = d.heap || 0;
+  const heapUsed  = Math.max(0, heapTotal - heapFree);
+  const heapPct   = Math.min(100, Math.max(0, Math.round((heapUsed / heapTotal) * 100)));
+
+  setK('mem-heap-total', kb(heapTotal));
+  setK('mem-heap-free',  kb(heapFree));
+  setK('mem-heap-used',  kb(heapUsed));
+  setK('mem-heap-min',   kb(d.heapMin || 0));
+  setK('mem-heap-max',   kb(d.heapMax || Math.round(heapFree * 0.65)));
+  setK('mem-heap-frag',  (d.heapFrag != null ? Number(d.heapFrag).toFixed(1) : '--') + ' %');
+
+  const heapBar = $('#mem-heap-bar');
+  if (heapBar) heapBar.style.width = heapPct + '%';
+  const heapPctEl = $('#mem-heap-pct');
+  if (heapPctEl) heapPctEl.textContent = heapPct + '%';
+  const heapDetail = $('#mem-heap-detail');
+  if (heapDetail) heapDetail.textContent = `${kb(heapFree)} FREE / ${kb(heapTotal)} TOTAL`;
+
+  // Application Partition (huge_app 3.1 MB = 3145728 B)
+  const appTotal = 3145728;
+  const appUsed  = d.sketchBytes || 1228800; // ~1.2 MB default
+  const appPct   = Math.min(100, Math.max(0, Math.round((appUsed / appTotal) * 100)));
+  const appBar   = $('#mem-app-bar');
+  if (appBar) appBar.style.width = appPct + '%';
+  const appPctEl = $('#mem-app-pct');
+  if (appPctEl) appPctEl.textContent = appPct + '%';
+  const appText  = $('#mem-app-text');
+  if (appText) appText.textContent = `${kb(appUsed)} USED / ${kb(appTotal)} ALLOCATED`;
+
+  // LittleFS Partition (1.0 MB = 1048576 B)
+  const fsTotal = d.fsTotal || 1048576;
+  const fsUsed  = d.fsUsed || 0;
+  const fsPct   = Math.min(100, Math.max(0, Math.round((fsUsed / fsTotal) * 100)));
+  const fsBar   = $('#mem-fs-bar');
+  if (fsBar) fsBar.style.width = fsPct + '%';
+  const fsPctEl = $('#mem-fs-pct');
+  if (fsPctEl) fsPctEl.textContent = fsPct + '%';
+  const fsText  = $('#mem-fs-text');
+  if (fsText) fsText.textContent = `${kb(fsUsed)} USED / ${kb(fsTotal)} ALLOCATED`;
+
+  // FreeRTOS Task Headroom
+  const netWm = d.netWatermark || 4096;
+  const telWm = d.telWatermark || d.watermark || 4096;
+  const taskNetVal = $('#mem-task-net-val');
+  if (taskNetVal) taskNetVal.textContent = `${netWm} B REMAINING`;
+  const taskTelVal = $('#mem-task-tel-val');
+  if (taskTelVal) taskTelVal.textContent = `${telWm} B REMAINING`;
+
+  const taskNetBar = $('#mem-task-net-bar');
+  if (taskNetBar) taskNetBar.style.width = Math.min(100, Math.max(5, Math.round((netWm / 8192) * 100))) + '%';
+  const taskTelBar = $('#mem-task-tel-bar');
+  if (taskTelBar) taskTelBar.style.width = Math.min(100, Math.max(5, Math.round((telWm / 8192) * 100))) + '%';
+
+  setK('mem-cpu', `${d.cpuMHz || 240} MHz (Xtensa LX6)`);
+}
+
+// ============================================================
+// 10C. BOARD & PINOUT INSPECTOR UPDATER
+// ============================================================
+function updatePinoutInspector(d) {
+  if (d.gpio && d.gpio.out) {
+    for (const o of d.gpio.out) {
+      const pinNum = o.pin != null ? o.pin : (o.id === 0 ? 2 : (o.id === 1 ? 4 : 16));
+      const isOn = !!o.on;
+
+      // Update SVG pin element
+      const svgPin = $(`#p-${pinNum}`);
+      if (svgPin) svgPin.classList.toggle('on', isOn);
+
+      // Status LED (GPIO 2)
+      if (pinNum === 2) {
+        const ledD2 = $('#svg-led-d2');
+        if (ledD2) {
+          ledD2.setAttribute('fill', isOn ? '#ffffff' : '#00ff66');
+          ledD2.style.filter = isOn ? 'url(#neon-glow)' : 'none';
+        }
+      }
+
+      // Update table cell
+      const tblState = $(`#tbl-state-gpio${pinNum}`);
+      if (tblState) {
+        tblState.innerHTML = isOn
+          ? `<span class="chip-val chip-high">HIGH (ON)</span>`
+          : `<span class="chip-val chip-low">LOW (OFF)</span>`;
+      }
+    }
+  }
+
+  if (d.gpio && d.gpio.in) {
+    for (const inp of d.gpio.in) {
+      const pinNum = inp.pin != null ? inp.pin : 0;
+      const isActive = !!inp.active;
+
+      const svgPin = $(`#p-${pinNum}`);
+      if (svgPin) svgPin.classList.toggle('active', isActive);
+
+      if (pinNum === 0) {
+        const bootBtn = $('#svg-btn-boot');
+        if (bootBtn) bootBtn.classList.toggle('active', isActive);
+        const bootCircle = $('#svg-circle-boot');
+        if (bootCircle) bootCircle.setAttribute('fill', isActive ? '#ffffff' : '#003314');
+
+        const tblBoot = $('#tbl-state-gpio0');
+        if (tblBoot) {
+          tblBoot.innerHTML = isActive
+            ? `<span class="chip-val chip-active">ACTIVE (LOW)</span>`
+            : `<span class="chip-val chip-idle">IDLE (HIGH)</span>`;
+        }
+      }
+    }
+  }
+}
+
+// ============================================================
+// 10D. VIRTUAL TABS & PIN INTERACTION WIRING
+// ============================================================
+function wireTabs() {
+  $$('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      $$('.tab-btn').forEach(b => {
+        const isSel = (b === btn);
+        b.classList.toggle('active', isSel);
+        b.setAttribute('aria-selected', isSel ? 'true' : 'false');
+      });
+      $$('.tab-view').forEach(v => {
+        v.classList.toggle('active', v.id === `view-${target}`);
+      });
+      if (target === 'scada') {
+        osc.start();
+      }
+    });
+  });
+}
+
+function wirePinHover() {
+  $$('.svg-pin').forEach(pin => {
+    pin.addEventListener('mouseenter', () => {
+      const id = pin.id;
+      const num = id.replace('p-', '');
+      const row = $(`#tbl-row-gpio${num}`);
+      if (row) row.classList.add('highlight');
+    });
+    pin.addEventListener('mouseleave', () => {
+      const id = pin.id;
+      const num = id.replace('p-', '');
+      const row = $(`#tbl-row-gpio${num}`);
+      if (row) row.classList.remove('highlight');
+    });
+  });
+
+  $$('.pin-table tbody tr').forEach(row => {
+    row.addEventListener('click', () => {
+      const id = row.id;
+      if (!id) return;
+      const num = id.replace('tbl-row-gpio', '');
+      const svgPin = $(`#p-${num}`);
+      if (svgPin) {
+        svgPin.style.filter = 'url(#neon-glow)';
+        setTimeout(() => { svgPin.style.filter = ''; }, 1200);
+      }
+    });
+  });
+}
+
+// ============================================================
 // 11. DIAGNOSTICS CONSOLE
 // ============================================================
 let diagCount = 0;
@@ -1021,6 +1198,8 @@ async function init() {
   wireI2cScan();
   wireReboot();
   wireLogout();
+  wireTabs();
+  wirePinHover();
 
   window.addEventListener('resize', () => {
     if (login.active) { drawTunnel(performance.now()); drawSkull(performance.now()); }

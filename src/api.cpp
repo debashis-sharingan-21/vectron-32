@@ -271,6 +271,10 @@ String buildTelemetryFrame() {
   j += ",\"netWatermark\":" + String(t.netWatermark);
   j += ",\"fsUsed\":"       + String((unsigned)LittleFS.usedBytes());
   j += ",\"fsTotal\":"      + String((unsigned)LittleFS.totalBytes());
+  j += ",\"heapTotal\":"    + String(t.heapTotal);
+  j += ",\"heapMax\":"      + String(t.heapMaxBlock);
+  j += ",\"sketchBytes\":"  + String((unsigned)ESP.getSketchSize());
+  j += ",\"flashBytes\":"   + String((unsigned)ESP.getFlashChipSize());
 
   j += "}";
   return j;
