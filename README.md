@@ -1,19 +1,74 @@
 # VECTRON-32: Industrial Command Center & Instrumentation Console (v2.0)
 
-[![PlatformIO CI](https://github.com/debashis-sharingan-21/vectron-32/actions/workflows/build.yml/badge.svg)](https://github.com/debashis-sharingan-21/vectron-32/actions/workflows/build.yml)
-[![SoC](https://img.shields.io/badge/SoC-ESP32--WROOM--32-red.svg?logo=espressif)](https://www.espressif.com/)
+[![Build & Verification CI](https://github.com/debashis-sharingan-21/vectron-32/actions/workflows/build.yml/badge.svg)](https://github.com/debashis-sharingan-21/vectron-32/actions/workflows/build.yml)
+[![SoC](https://img.shields.io/badge/SoC-ESP32--WROOM--32%20(Xtensa%20Dual--Core)-red.svg?logo=espressif)](https://www.espressif.com/)
 [![RTOS](https://img.shields.io/badge/RTOS-FreeRTOS%20SMP-blue.svg)](https://www.freertos.org/)
-[![C++](https://img.shields.io/badge/Standard-C%2B%2B17-blue.svg)](https://isocpp.org/)
-[![Filesystem](https://img.shields.io/badge/Storage-LittleFS-orange.svg)](https://github.com/ARMmbed/littlefs)
+[![Toolchain](https://img.shields.io/badge/Toolchain-PlatformIO%20%7C%20Arduino%20IDE%202.x-orange.svg)](https://platformio.org/)
+[![Language](https://img.shields.io/badge/Standard-C%2B%2B17-blue.svg)](https://isocpp.org/)
+[![Storage](https://img.shields.io/badge/Storage-LittleFS-yellow.svg)](https://github.com/ARMmbed/littlefs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Author](https://img.shields.io/badge/Architect-debashis--sharingan--21-brightgreen.svg)](https://github.com/debashis-sharingan-21)
 
-**VECTRON-32** is a cyber-industrial SCADA instrumentation console, real-time silicon memory profiler, and hardware telemetry engine running entirely on a dual-core **ESP32-WROOM-32** microcontroller. Designed with deterministic FreeRTOS task separation, non-blocking asynchronous WebSocket transport, hardware-accelerated SHA-256 cryptographic storage, and a single-page virtual tab telemetry dashboard.
+**VECTRON-32** is a real-time SCADA instrumentation console, dual-core telemetry engine, and hardware security monitor engineered for the **ESP32-WROOM-32** microcontroller. Built with deterministic FreeRTOS symmetric multiprocessing (SMP), asynchronous WebSocket streaming at 10Hz, hardware-accelerated SHA-256 cryptographic provisioning, and an authentic retro-industrial cyber-matrix UI with 3D wireframe perspective rendering.
 
 ---
 
-## Dual-Core Architecture
+## Visual Tour & System Screenshots
 
-VECTRON-32 enforces strict symmetric multiprocessing (SMP) core affinity across the ESP32's dual Tensilica Xtensa LX6 cores, decoupling real-time hardware sampling from asynchronous network operations:
+| 01. Login: 3D Wireframe Tunnel & Pixel Skull | 02. CRT Access Granted Transition |
+| :---: | :---: |
+| ![VECTRON-32 Login Screen](docs/images/01-login.png) | ![Access Granted CRT Animation](docs/images/02-access-granted.png) |
+| **03. Vector ESP32 DevKit Boot Schematic Trace** | **04. SCADA Telemetry & Silicon Memory Map** |
+| ![Vector ESP32 Boot Schematic](docs/images/03-boot.png) | ![SCADA Dashboard & Silicon Memory Map](docs/images/04-dashboard.png) |
+
+---
+
+## GitHub-Native Advisory Notices
+
+> [!NOTE]
+> **Default SoftAP Network & Terminal Parameters**:
+> - **SSID**: `VECTRON-32`
+> - **Default Gateway IP**: `http://192.168.4.1/`
+> - **Captive Portal**: Automatic redirect on client association
+> - **UART Baud Rate**: `115200 8-N-1`
+> - **Default Access Key**: User `demo` / Pass `demo`
+
+> [!TIP]
+> **Zero-Hardware Local Simulation**:
+> You can develop, test, and benchmark the complete web console locally without physical hardware using the built-in Node.js mock simulator:
+> ```bash
+> node tools/mock-server.js
+> ```
+> Open [http://localhost:8099/](http://localhost:8099/) in any browser (RFC 6455 WebSocket streaming included).
+
+> [!IMPORTANT]
+> **Flash Partition Layout Requirements**:
+> VECTRON-32 requires the **Huge APP (3MB No OTA / 1MB SPIFFS)** partition scheme (`huge_app.csv`). You must flash both the LittleFS filesystem partition and the compiled firmware binary. For Arduino IDE users, follow the dedicated [Arduino IDE Setup Guide](docs/ARDUINO_IDE_SETUP.md).
+
+> [!WARNING]
+> **Hardware Pin Safety Policy**:
+> Never connect output loads or external pull-ups to ESP32 strapping pins (**GPIO 0, 2, 12, 15**), internal SPI flash lines (**GPIO 6–11**), or UART0 programming pins (**GPIO 1, 3**). Doing so may prevent normal boot or corrupt onboard flash memory.
+
+> [!CAUTION]
+> **Industrial Wiring & Isolation Standards**:
+> ESP32 GPIO logic thresholds operate strictly at **3.3V CMOS**. 5V inputs will damage the chip without level shifting. When switching inductive loads (relays, solenoids, DC motors), always employ optocoupler isolation and reverse flyback clamping diodes (e.g., 1N4007). See the [Hardware Guide](docs/HARDWARE_GUIDE.md).
+
+---
+
+## Quick-Access Directory Links
+
+- 🛠️ **[PlatformIO Configuration](platformio.ini)** — Multi-environment production build settings.
+- ⚡ **[Arduino IDE Standalone Sketch](arduino/vectron_32/vectron_32.ino)** — Turnkey sketch for Arduino IDE 2.x/1.8.x.
+- 📖 **[Arduino IDE Complete Setup Guide](docs/ARDUINO_IDE_SETUP.md)** — Step-by-step flashing & board manager guide.
+- 🔌 **[Hardware Wiring & Electrical Guide](docs/HARDWARE_GUIDE.md)** — Pin matrices, relay flyback schematics, and BOM.
+- 🏗️ **[System Architecture Documentation](docs/ARCHITECTURE.md)** — FreeRTOS task schedules, state machines, and threat models.
+- 💻 **[Local Mock Server Simulator](tools/mock-server.js)** — Zero-dependency Node.js simulation harness.
+
+---
+
+## System Architecture: Dual-Core FreeRTOS Division
+
+VECTRON-32 strictly partitions workloads across the ESP32's dual Xtensa LX6 cores using FreeRTOS SMP task pinning. High-priority hardware telemetry execution on Core 1 is mathematically isolated from Core 0 network traffic:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -27,7 +82,7 @@ VECTRON-32 enforces strict symmetric multiprocessing (SMP) core affinity across 
 │  │   - AsyncWebServer (:80)    │  │  │   - Hardware::service()      │  │
 │  │   - AsyncWebSocket (/ws)    │◄─┼──│   - 10 Hz Telemetry Broadcast│  │
 │  │   - Captive Portal DNS (:53)│  │  │   - I2C Auto-Discovery Engine│  │
-│  │   - Session Cookie Auth     │  │  │   - LEDC PWM & GPIO Matrix   │  │
+│  │   - Session Cookie Auth     │  │  │   - LEDC PWM Engine & GPIO   │  │
 │  │   - Static Asset Streaming  │  │  │   - RTC Lockout Diagnostics  │  │
 │  └─────────────────────────────┘  │  └──────────────────────────────┘  │
 │                 │                 │                 │                  │
@@ -37,195 +92,171 @@ VECTRON-32 enforces strict symmetric multiprocessing (SMP) core affinity across 
 └───────────────────────────────────┴────────────────────────────────────┘
 ```
 
-> [!NOTE]
-> **Default SoftAP Parameters**:
-> - **SSID**: `VECTRON-32`
-> - **Access IP**: `http://192.168.4.1/`
-> - **Captive Portal**: Automatic redirect to `/setup` on first boot
-> - **UART Baud Rate**: `115200 8-N-1`
+---
 
-> [!TIP]
-> **Zero-Hardware Simulation**:
-> You can preview, develop, and benchmark the complete web dashboard locally without an ESP32 by running the bundled mock server:
-> ```bash
-> node tools/mock-server.js
-> ```
-> Navigate to `http://localhost:8099/` (Default credentials: `demo` / `demo`). Includes full RFC 6455 WebSocket streaming.
+## Silicon Memory Map (520KB SRAM + 4MB SPI Flash)
 
-> [!IMPORTANT]
-> **Partition Scheme & LittleFS Provisioning**:
-> VECTRON-32 requires the `huge_app.csv` partition layout (`3.1MB App / 1MB SPIFFS/LittleFS`). You **must** flash both the LittleFS filesystem image (`pio run --target uploadfs`) and the firmware binary (`pio run --target upload`) on first setup.
+```
+==========================================================================
+ESP32 INTERNAL MEMORY TOPOLOGY (520 KB SRAM)
+==========================================================================
+ 0x3FFA_0000 ┌──────────────────────────────────────┐
+             │ Internal ROM 1 (Data & System Calls) │ (128 KB)
+ 0x3FFB_0000 ├──────────────────────────────────────┤
+             │ DRAM (Dynamic RAM / FreeRTOS Heap)   │ (176 KB Data / Dynamic)
+             │   - FreeRTOS Task Stacks (8KB + 8KB) │
+             │   - AsyncTCP Buffers & WS Frames     │
+             │   - Dynamic Sensor Caches            │
+ 0x3FFE_0000 ├──────────────────────────────────────┤
+             │ IRAM / DRAM Shared (D/I Cache Pool)  │ (128 KB Dual-Port)
+ 0x4000_0000 ├──────────────────────────────────────┤
+             │ IRAM (Instruction RAM / Fast Code)   │ (128 KB Critical ISRs)
+             └──────────────────────────────────────┘
+
+==========================================================================
+SPI FLASH PARTITION LAYOUT (4MB / huge_app.csv)
+==========================================================================
+ Offset      Size      Partition Name   Type   Subtype   Function
+ ─────────────────────────────────────────────────────────────────────────
+ 0x00001000  0x007000  bootloader       app    boot      2nd Stage Bootloader
+ 0x00009000  0x005000  nvs              data   nvs       NVS Namespace ("vectron")
+ 0x0000E000  0x002000  otadata          data   ota       OTA Table Stub
+ 0x00010000  0x300000  app0 (huge_app)  app    ota_0     VECTRON Firmware (3.14 MB)
+ 0x00310000  0x0F0000  spiffs (LittleFS)data   spiffs    Web Assets Image (960 KB)
+==========================================================================
+```
 
 ---
 
-## Virtual Tab Architecture (SPA)
+## ESP32 DevKit V1 Hardware Pinout & Safety Matrix
 
-The web dashboard is structured as a client-side Single-Page Application (SPA) with a top navigation bar, eliminating vertical scrolling while maintaining a continuous, uninterrupted WebSocket connection:
+The 38-pin DevKit board matrix strictly classifies every physical pad to safeguard against boot-mode locking, flash interface interference, and brownout triggers:
 
-1. **`[ TAB 1: SCADA CONSOLE ]`** (`#view-scada`):
-   - CRT Phosphor-Green Oscilloscope (`<canvas id="telemetry-chart">`) with dark-green dashed 8x10 reticle, neon glow waveforms (Free Heap, Chip Temperature, Clients), and live in-canvas HUD legend.
-   - GPIO output toggles, input pulse monitors, dynamic I2C bus auto-discovery card, and filterable diagnostics terminal (`[INFO]`, `[WARN]`, `[ERROR]`, `[BUS]`).
-   - Radio TX power controls (`wifi --txpower`) and 2-step reboot confirmation (`[y/n]`).
+```
+                      ┌───────────────────┐
+                      │    [MICRO-USB]    │
+               EN [01]│                   │[38] GND
+     [ANALOG] VP  [02]│                   │[37] GPIO 23 [SAFE / MOSI]
+     [ANALOG] VN  [03]│                   │[36] GPIO 22 [I2C SCL] ◄── BUS
+     [ANALOG] G34 [04]│                   │[35] GPIO 01 [UART0 TX] ◄── LOCKED
+     [ANALOG] G35 [05]│                   │[34] GPIO 03 [UART0 RX] ◄── LOCKED
+     [ANALOG] G32 [06]│   ESP-WROOM-32    │[33] GPIO 21 [I2C SDA] ◄── BUS
+     [ANALOG] G33 [07]│   WI-FI + BLE     │[32] GND
+     [OUTPUT] G25 [08]│    DUAL-CORE      │[31] GPIO 19 [SAFE / MISO]
+     [OUTPUT] G26 [09]│                   │[30] GPIO 18 [SAFE / SCK]
+     [OUTPUT] G27 [10]│   ┌───────────┐   │[29] GPIO 05 [SAFE / RELAY 2]
+     [OUTPUT] G14 [11]│   │    IC     │   │[28] GPIO 17 [SAFE / AUX]
+  [STRAPPING] G12 [12]│   │  CP2102   │   │[27] GPIO 16 [SAFE / AUX]
+              GND [13]│   └───────────┘   │[26] GPIO 04 [SAFE / RELAY 1]
+  [STRAPPING] G13 [14]│                   │[25] GPIO 00 [BOOT BUTTON] ◄── STRAPPING
+   [FLASH/SPI] D2 [15]│                   │[24] GPIO 02 [STATUS LED]  ◄── STRAPPING
+   [FLASH/SPI] D3 [16]│                   │[23] GPIO 15 [STRAPPING]
+  [FLASH/CMD] CMD [17]│  [EN]       [BOOT]│[22] D1      [FLASH/SPI]
+  [FLASH/CLK] CLK [18]│  BTN         BTN  │[21] D0      [FLASH/SPI]
+              5V  [19]│                   │[20] CLK     [FLASH/SPI]
+                      └───────────────────┘
+```
 
-2. **`[ TAB 2: SILICON MEMORY MAP ]`** (`#view-memory`):
-   - **Internal SRAM (DRAM / Heap)**: Real-time gauges for Total Heap (320 KB), Free Heap, Historic Minimum Watermark, Heap Fragmentation %, and Largest Allocable Block.
-   - **NOR Flash Map**: Segmented partition visual strip covering Bootloader, NVS (`"vectron"` namespace), `huge_app` binary utilization (3.1 MB max), and LittleFS asset storage (1.0 MB max).
-   - **FreeRTOS Task Headroom**: Real-time stack headroom telemetry (`uxTaskGetStackHighWaterMark`) for `vNetworkTask` (Core 0), `vTelemetryTask` (Core 1), and `RTC_DATA_ATTR` lockout diagnostics.
-
-3. **`[ TAB 3: BOARD & PINOUT INSPECTOR ]`** (`#view-pinout`):
-   - Full vector SVG rendering of the ESP32-WROOM-32 DevKit board with interactive pin pads and traces.
-   - Status-coded lighting:
-     - **Neon Green (`#00ff66`)**: Active allowlisted outputs (GPIO 2 on-board LED, relays).
-     - **Cyan Pulse (`#00e5ff`)**: Active inputs (GPIO 0 BOOT switch).
-     - **Deep Blue (`#0088cc`)**: Guarded I2C bus lines (GPIO 21 SDA, GPIO 22 SCL).
-     - **Dark Amber / Red (`#ff3333` with line-through)**: Hardware-blocked pins (strapping 12/15, flash lines 6-11, UART0 1/3).
-   - Interactive hover/click cross-linking between SVG pins and the live Pinout Matrix Table.
-
----
-
-## Safety Matrix & Pin Assignment
-
-The firmware implements a strict GPIO safety matrix preventing bus contention, boot-strapping interference, and internal SPI flash corruption:
-
-| GPIO | Default Function | Input / Output | Safety Rating | Behavioral Notes |
-|:---:|:---:|:---:|:---:|:---|
-| **0** | Boot Mode / Input | Input (Pullup) | ⚠️ STRAPPING | Strapping pin (must be HIGH during reset). |
-| **2** | Onboard Status LED | Output | ⚠️ STRAPPING | Connected to internal LED; strapped to GND. |
-| **4** | Relay Output 1 | Output | ✅ SAFE | Active-LOW relay channel. |
-| **5** | Relay Output 2 | Output | ✅ SAFE | General output channel. |
-| **6-11**| Integrated Flash Bus | Forbidden | ⛔ SYSTEM CRITICAL | Connected directly to SPI Flash. Never touch. |
-| **12-15**| JTAG / MTDI / Strapping| Reserved | ⚠️ STRAPPING | Boot strapping pins. Excluded from runtime matrix. |
-| **16** | Auxiliary Output | Output | ✅ SAFE | Safe GPIO for external load switching. |
-| **17** | Auxiliary Output | Output | ✅ SAFE | Safe GPIO for external load switching. |
-| **21** | I2C SDA | Bidirectional | ✅ BUS | Guarded by FreeRTOS `i2cMutex`. |
-| **22** | I2C SCL | Output | ✅ BUS | Fast-mode 400 kHz clock with hardware pull-ups. |
-| **34-39**| Analog / GPI | Input-Only | ⚠️ INPUT ONLY | No internal pull-up/pull-down resistors. |
-
-> [!WARNING]
-> **Relay Active-Low Logic & Inrush Current**:
-> Relays wired to GPIO4 and GPIO16 typically operate in active-LOW configuration. VECTRON-32 configures pins HIGH immediately at boot to prevent relay chattering. Always ensure optocoupler isolation is powered from external 5V, not the 3.3V LDO rail.
-
-> [!CAUTION]
-> **Hardware Wiring Best Practices**:
-> - Never drive inductive relay coils directly from ESP32 pins; always use optocoupled driver stages with reverse flyback protection diodes (1N4007).
-> - Never exceed 3.3V on any GPIO. When switching AC mains (110V/230V), maintain physical creepage and clearance distances of at least 6mm.
+### Safety Classifications Legend
+- **Green (Safe Outputs)**: GPIO 4, 5, 16, 17, 18, 19, 23, 25, 26, 27.
+- **Cyan (Dedicated Inputs)**: GPIO 34, 35, 36, 39 (Analog/Sensors only; no internal pull-ups).
+- **Blue (I2C Bus Engine)**: GPIO 21 (SDA), GPIO 22 (SCL) protected by FreeRTOS `xSemaphoreMutex`.
+- **Red (System Blocked)**:
+  - GPIO 6–11: Internal SPI flash memory bus (Connecting causes immediate CPU panic).
+  - GPIO 1, 3: UART0 programming console interface.
+  - GPIO 0, 2, 12, 15: Strapping pins determining boot voltage, flash voltage, and boot mode.
 
 ---
 
-## Non-Volatile Security & RTC Persistence
+## 3-Tab Virtual Dashboard Architecture (SPA)
 
-1. **SHA-256 + 16-Byte Cryptographic Salt**:
-   Passphrases are salted with 16 random bytes sourced from ESP32 hardware entropy (`esp_fill_random`) and hashed using `mbedtls_sha256`. Hashes are committed to non-volatile flash (`Preferences.h`) under the `"vectron"` namespace.
-2. **Brownout & Reset-Resilient Defense**:
-   Brute-force lockout counters and lockout expiration timestamps reside in `RTC_DATA_ATTR static uint32_t` ultra-low-power SRAM. An attacker cannot bypass rate-limiting or lockouts by cycling power or triggering watchdog brownouts.
-3. **Session Token Hardening**:
-   HTTP endpoints and WebSocket upgrade requests authenticate against ephemeral 64-character hex tokens stored in memory and transported via `HttpOnly`, `SameSite=Strict` `VECTRON_SID` cookies.
+The web console operates as a client-side Single-Page Application (SPA) with three virtual views connected to a single persistent WebSocket stream:
+
+1. **`[ TAB 1: SCADA CONSOLE ]`**:
+   - **Reticle Oscilloscope (`<canvas id="telemetry-chart">`)**: 60-second rolling window graphing Free Heap, Core Temperature, and Connected Clients on an 8x10 green grid.
+   - **Hardware Control Matrix**: Real-time latching toggle switches for relay outputs and pulse indicators for digital inputs.
+   - **I2C Auto-Discovery Scanner**: Dynamic device map identifying OLEDs (0x3C), BME280s (0x76), and expanders (0x20).
+   - **Diagnostics Console**: Monospace terminal log with severity filter tabs (`[INFO]`, `[WARN]`, `[ERROR]`, `[BUS]`).
+
+2. **`[ TAB 2: SILICON MEMORY MAP ]`**:
+   - **SRAM Allocator Gauges**: Live telemetry of Free Heap, Min Watermark, Heap Fragmentation %, and Max Free Block.
+   - **Flash Partition Gauge**: Segmented visualization of bootloader, NVS namespace, application partition, and LittleFS.
+   - **FreeRTOS Stack Watermarks**: Real-time stack headroom monitoring via `uxTaskGetStackHighWaterMark` for both cores.
+
+3. **`[ TAB 3: BOARD & PINOUT INSPECTOR ]`**:
+   - **Interactive DevKit SVG**: Full schematic board with interactive pin pads and traces.
+   - **Status-Coded Lighting**: Active outputs glow neon green, inputs pulse cyan, bus pins illuminate blue, and restricted pins show crosshatched lockouts.
+   - **Clickable Pin Matrix**: Clicking any physical pin on the SVG filters the hardware register table.
 
 ---
 
-## WebSocket Protocol Specification
+## Deployment & Getting Started
 
-The WebSocket endpoint is mounted at `ws://192.168.4.1/ws`.
+### Method A: PlatformIO (Recommended)
 
-### 1. Telemetry Broadcast Frame (ESP32 -> Client, 10 Hz)
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/debashis-sharingan-21/vectron-32.git
+   cd vectron-32
+   ```
+2. **Build and upload LittleFS filesystem assets**:
+   ```bash
+   pio run -e esp32dev --target uploadfs
+   ```
+3. **Compile and flash firmware binary**:
+   ```bash
+   pio run -e esp32dev --target upload
+   ```
+4. **Monitor serial console**:
+   ```bash
+   pio device monitor -b 115200
+   ```
+
+### Method B: Arduino IDE (Standalone)
+
+1. Open `arduino/vectron_32/vectron_32.ino`.
+2. Configure **Tools > Board** to `ESP32 Dev Module`.
+3. Set **Tools > Partition Scheme** to `Huge APP (3MB No OTA/1MB SPIFFS)`.
+4. Upload LittleFS assets using the **LittleFS Data Upload** plugin.
+5. Click **Upload** (`➔`). Full instructions are documented in the [Arduino IDE Setup Guide](docs/ARDUINO_IDE_SETUP.md).
+
+---
+
+## REST & WebSocket Protocol Reference
+
+### WebSocket Real-Time Telemetry Frame (`10 Hz`)
 ```json
 {
   "t": "telem",
   "up": 1420,
-  "heap": 182340,
-  "heapMin": 142100,
-  "heapMax": 110000,
-  "heapTotal": 327680,
+  "heap": 184512,
+  "heapMin": 164200,
   "heapFrag": 8.4,
-  "temp": 42.6,
-  "rssi": 0,
+  "temp": 41.2,
   "clients": 1,
-  "cpuMHz": 240,
   "gpio": {
-    "out": [
-      {"id": 0, "on": true},
-      {"id": 1, "on": false}
-    ],
-    "in": [
-      {"id": 0, "active": false}
-    ]
+    "out": [{"id": 0, "name": "ONBOARD_LED", "pin": 2, "on": true, "blocked": false}],
+    "in": [{"id": 0, "name": "BOOT_BUTTON", "pin": 0, "active": false}]
   },
   "i2c": {
     "state": "done",
-    "found": [
-      {"addr": 60, "name": "SSD1306", "desc": "OLED 128x64"},
-      {"addr": 118, "name": "BME280", "desc": "Env sensor"}
-    ]
+    "sda": 21,
+    "scl": 22,
+    "found": [{"addr": 60, "name": "SSD1306", "desc": "OLED Display 128x64"}]
   },
-  "ble": {"adv": false, "conn": 0},
-  "wifi": {"clients": 1, "ch": 6, "txLevel": 2},
-  "watermark": 4280,
-  "telWatermark": 4280,
-  "netWatermark": 3950,
-  "fsUsed": 102400,
-  "fsTotal": 1048576,
-  "sketchBytes": 1228800,
-  "flashBytes": 4194304
+  "watermark": 4096
 }
 ```
 
-### 2. Inbound Command Payloads (Client -> ESP32)
-- **Actuate GPIO**:
-  ```json
-  {"cmd": "gpio", "id": 0, "state": 1}
-  ```
-- **Initiate I2C Bus Scan**:
-  ```json
-  {"cmd": "i2c_scan"}
-  ```
-- **Request Graceful Reboot**:
-  ```json
-  {"cmd": "reboot"}
-  ```
+### WebSocket Hardware Command Frame
+```json
+{"cmd": "gpio", "id": 0, "state": 1}
+{"cmd": "reboot"}
+```
 
 ---
 
-## Quickstart Guide
+## License & Attribution
 
-### Prerequisites
-- [PlatformIO Core](https://platformio.org/) or [VS Code PlatformIO Extension](https://marketplace.visualstudio.com/items?itemName=platformio.platformio-ide)
-- ESP32-WROOM-32 development board (CP2102, CH340, or FTDI interface)
-- USB data cable
-
-### 1. Clone & Environment Setup
-```bash
-git clone https://github.com/debashis-sharingan-21/vectron-32.git
-cd vectron-32
-```
-
-### 2. Build & Flash Filesystem (LittleFS)
-Compile and upload the web dashboard, fonts, and stylesheets to flash:
-```bash
-pio run --target uploadfs
-```
-
-### 3. Build & Flash Firmware
-Compile and upload the C++17 FreeRTOS firmware:
-```bash
-pio run --target upload
-```
-
-### 4. Serial Telemetry Monitor
-Open the serial console at 115200 baud to monitor the FreeRTOS boot process:
-```bash
-pio device monitor -b 115200
-```
-
-### 5. Access the Console
-1. Connect your workstation or mobile device to the Wi-Fi network: **`VECTRON-32`**.
-2. The captive portal will automatically prompt login, or navigate to **`http://192.168.4.1/`**.
-3. On first boot, the `/setup` wizard allows setting persistent administrator credentials and AP passphrase.
-
----
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-Developed with precision by **debashis-sharingan-21**  
-GitHub: [@debashis-sharingan-21](https://github.com/debashis-sharingan-21)
+Distributed under the **MIT License**. Engineered and authored by **[debashis-sharingan-21](https://github.com/debashis-sharingan-21)**.
+All brand names, trademarks, and registered hardware references belong to their respective holders.

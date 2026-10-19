@@ -126,6 +126,7 @@ function drawLoginCanvas(t) {
   const ctx = cv.getContext('2d');
   ctx.save();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, w, h);
 
   const cx = w / 2, cy = h / 2;
@@ -146,7 +147,7 @@ function drawLoginCanvas(t) {
   ctx.moveTo(cx, cy - 180); ctx.lineTo(cx, cy + 180);
   ctx.stroke();
 
-  // Rotating Radar Sweep Beam
+  // Rotating Radar Sweep Beam (10Hz active radar sweep)
   if (!reduced) {
     const sweepAngle = (ts * 1.5) % (Math.PI * 2);
     const grad = ctx.createRadialGradient(cx, cy, 10, cx, cy, 210);
@@ -161,16 +162,17 @@ function drawLoginCanvas(t) {
   }
   ctx.restore();
 
-  // 2. 3D Perspective Wireframe Tunnel (12 exponential frames)
+  // 2. Infinite 3D Wireframe Perspective Tunnel (10 exponential depth rectangles)
   const iw = w * 0.28, ih = h * 0.34;
   const ow = w * 0.98, oh = h * 0.98;
 
-  ctx.lineWidth = 1.3;
+  // Dual-tone neon glow effect (shadowColor = '#00ff66', shadowBlur = 6)
+  ctx.lineWidth = 1.4;
   ctx.strokeStyle = '#00ff66';
-  ctx.shadowColor = 'rgba(0, 255, 102, 0.75)';
-  ctx.shadowBlur = 8;
+  ctx.shadowColor = '#00ff66';
+  ctx.shadowBlur = 6;
 
-  // 16 Perspective rays projecting from vanishing portal
+  // Vanishing rays converging at center screen
   const rays = [
     [-1, -1], [-0.66, -1], [-0.33, -1], [0, -1], [0.33, -1], [0.66, -1], [1, -1],
     [-1, 1], [-0.66, 1], [-0.33, 1], [0, 1], [0.33, 1], [0.66, 1], [1, 1],
@@ -186,21 +188,24 @@ function drawLoginCanvas(t) {
   }
   ctx.stroke();
 
-  // 12 Concentric perspective frames zooming forward exponentially
-  const N = 12;
-  const phase = reduced ? 0 : (ts * 0.22) % 1;
+  // 10 Exponential depth rectangles synchronized with skull breathing pulsation Math.sin(ts * 2.5)
+  const N = 10;
+  const phase = reduced ? 0 : ((ts * 0.24) + 0.02 * Math.sin(ts * 2.5)) % 1;
   for (let k = 0; k < N; k++) {
     const u = (k + phase) / N;
-    const e = Math.pow(u, 2.3);
+    const e = Math.pow(u, 2.2);
     const rw = (iw / 2) + ((ow - iw) / 2) * e;
     const rh = (ih / 2) + ((oh - ih) / 2) * e;
-    ctx.globalAlpha = 0.15 + 0.85 * e;
+    ctx.globalAlpha = 0.18 + 0.82 * e;
+    // Dual-tone outline highlight
+    ctx.strokeStyle = e > 0.65 ? '#70ff9c' : '#00ff66';
     ctx.strokeRect(cx - rw, cy - rh, rw * 2, rh * 2);
   }
 
   // Inner vanishing portal frame
   ctx.globalAlpha = 0.95;
   ctx.lineWidth = 2.0;
+  ctx.strokeStyle = '#70ff9c';
   ctx.strokeRect(cx - iw / 2, cy - ih / 2, iw, ih);
 
   // Center depth crosshair
@@ -211,18 +216,18 @@ function drawLoginCanvas(t) {
   ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy + 10);
   ctx.stroke();
 
-  // 3. Pixel Skull Drawing (Doubled footprint: filling 520x400)
+  // 3. Pixel Skull Drawing (24x24 bitmap reference match scaled to 520x400)
   const cols = SKULL[0].length; // 30
   const rows = SKULL.length;    // 24
-  const breathe = reduced ? 1 : 1 + 0.038 * Math.sin(ts * 2.4);
+  const breathe = reduced ? 1 : 1 + 0.04 * Math.sin(ts * 2.5);
   const cell = Math.min((w * 0.49) / cols, (h * 0.65) / rows) * breathe;
   const ox = cx - (cell * cols) / 2;
   const oy = cy - (cell * rows) / 2 - 4;
   const dot = cell * 0.84;
   const off = (cell - dot) / 2;
 
-  ctx.shadowColor = 'rgba(0, 255, 102, 0.95)';
-  ctx.shadowBlur = cell * 0.9;
+  ctx.shadowColor = '#00ff66';
+  ctx.shadowBlur = 6;
 
   for (let r = 0; r < rows; r++) {
     const scan = reduced ? 1 : 0.82 + 0.18 * Math.sin(ts * 4.2 - r * 0.45);
@@ -230,29 +235,29 @@ function drawLoginCanvas(t) {
       if (SKULL[r][c] !== '#') continue;
       const edge = (r === 0 || SKULL[r-1][c] !== '#' || c === 0 || SKULL[r][c-1] !== '#' ||
                     c === cols - 1 || SKULL[r][c+1] !== '#');
-      ctx.fillStyle = edge ? '#c2ffd9' : '#00ff66';
+      ctx.fillStyle = edge ? '#b9ffcb' : '#00ff66';
       ctx.globalAlpha = scan * (edge ? 1 : 0.88);
-      ctx.fillRect(ox + c * cell + off, oy + r * cell + off, dot, dot);
+      ctx.fillRect(Math.round(ox + c * cell + off), Math.round(oy + r * cell + off), Math.round(dot), Math.round(dot));
     }
   }
 
-  // Animated pulsing eye-socket glow effect (#00ff66 to #33ff88)
+  // Animated pulsing eye-socket glow effect (#00ff66 to #33ff88) with subtle flicker
   if (!reduced) {
     const eyePulse = 0.5 + 0.5 * Math.sin(ts * 3.5);
-    const eyeFlicker = 0.65 + 0.35 * Math.sin(ts * 14 + Math.cos(ts * 8));
+    const eyeFlicker = 0.70 + 0.30 * Math.sin(ts * 14 + Math.cos(ts * 8));
     const leftEyeX = ox + 7 * cell + cell / 2;
     const rightEyeX = ox + 22 * cell + cell / 2;
     const eyeY = oy + 11.5 * cell;
     const eyeR = cell * 2.2;
 
     ctx.save();
-    ctx.shadowBlur = 18;
+    ctx.shadowBlur = 16;
     const rVal = Math.round(eyePulse * 51);
     const gVal = 255;
     const bVal = Math.round(102 + eyePulse * 34);
     ctx.shadowColor = `rgb(${rVal}, ${gVal}, ${bVal})`;
 
-    ctx.fillStyle = `rgba(${rVal}, ${gVal}, ${bVal}, ${0.32 * eyeFlicker})`;
+    ctx.fillStyle = `rgba(${rVal}, ${gVal}, ${bVal}, ${0.34 * eyeFlicker})`;
     ctx.beginPath();
     ctx.arc(leftEyeX, eyeY, eyeR, 0, Math.PI * 2);
     ctx.arc(rightEyeX, eyeY, eyeR, 0, Math.PI * 2);
@@ -267,10 +272,14 @@ function drawLoginCanvas(t) {
     ctx.restore();
   }
 
-  // Subtle green CRT scanline overlay on canvas
+  // Dual-Axis Phosphor Scanline Overlay (Horizontal CRT scanlines + Vertical phosphor columns)
   ctx.save();
-  ctx.globalAlpha = 0.08;
+  ctx.globalAlpha = 0.05;
   ctx.fillStyle = '#00ff66';
+  for (let x = 0; x < w; x += 4) {
+    ctx.fillRect(x, 0, 1, h);
+  }
+  ctx.globalAlpha = 0.08;
   for (let y = 0; y < h; y += 3) {
     ctx.fillRect(0, y, w, 1);
   }
