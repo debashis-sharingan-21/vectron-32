@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050e08">
+<title>VECTRON-32 // REAL-TIME INSTRUMENTATION CONSOLE</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ===================== SCREEN: LOGIN ===================== -->
+  <section id="screen-login" class="screen">
+    <div class="login-frame">
+
+      <header class="lf-head">
+        <div class="lf-logo"><i class="tri"></i><span>VECTRON-32</span><i class="tri"></i></div>
+        <div class="lf-sub"><b>VECTRON-32</b><span>ESP32-WROOM-32 CMD CENTER v2.0</span></div>
+      </header>
+
+      <div class="lf-body">
+        <form id="login-form" class="lf-left" autocomplete="on" novalidate>
+          <div class="lf-label">[ OPERATOR ]</div>
+          <div class="lf-box">
+            <input id="in-user" name="username" type="text" autocomplete="username"
+                   autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="63"
+                   placeholder="USER NAME" aria-label="User name">
+          </div>
+
+          <div class="lf-label">[ PASSKEY ]</div>
+          <div class="lf-box">
+            <input id="in-pass" name="password" type="password" autocomplete="current-password"
+                   maxlength="63" placeholder="PASSWORD" aria-label="Password">
+          </div>
+
+          <div class="lf-list" aria-live="polite">
+            <div class="lf-list-head"><span>[ SESSION :</span><span>]</span></div>
+            <ul id="login-log">
+              <li>LINK ........ <em>OK</em></li>
+              <li>AUTH ........ <em>STANDBY</em></li>
+            </ul>
+          </div>
+
+          <div class="lf-actions">
+            <i class="led on" id="led-link" title="link"></i>
+            <i class="led" id="led-auth" title="auth"></i>
+            <i class="led" id="led-lock" title="lock"></i>
+            <button id="btn-login" class="lf-btn" type="submit">[ AUTHENTICATE ]</button>
+          </div>
+        </form>
+
+        <div class="lf-view">
+          <canvas id="tunnel"></canvas>
+          <canvas id="skull"></canvas>
+        </div>
+      </div>
+
+      <div class="lf-title"><span>VECTRON-32</span></div>
+
+      <footer class="lf-foot">
+        <span>VECTRON.SYSTEM.INFO LOAD_NOW//:ESP32_CMD</span>
+        <span id="lf-host">192.168.4.1</span>
+      </footer>
+    </div>
+  </section>
+
+  <!-- ===================== SCREEN: ACCESS GRANTED ===================== -->
+  <section id="screen-granted" class="screen">
+    <div class="ag-grid"></div>
+    <div class="ag-frame">
+      <i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>
+      <h1 class="ag-text"><span>ACCESS</span><span>GRANTED</span></h1>
+    </div>
+    <div class="ag-noise" id="ag-noise" aria-hidden="true"></div>
+  </section>
+
+  <!-- ===================== SCREEN: BOOT ===================== -->
+  <section id="screen-boot" class="screen">
+    <div class="bt-wrap">
+      <div class="bt-board" id="bt-board"></div>
+      <div class="bt-term">
+        <div class="bt-title">VECTRON-32 // HARDWARE INIT</div>
+        <pre id="bt-log" aria-live="polite"></pre>
+        <div class="bt-bar"><div class="bt-fill" id="bt-fill"></div></div>
+        <div class="bt-pct"><span id="bt-pct">0%</span><span id="bt-stage">POWER</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SCREEN: DASHBOARD ===================== -->
+  <section id="screen-dashboard" class="screen">
+    <div class="dash-frame">
+
+      <header class="d-head">
+        <h1 class="px-title">VECTRON-32 INSTRUMENTATION CONSOLE</h1>
+        <div class="d-controls">
+          <div class="d-link" id="d-link"><i class="dot"></i><span id="d-link-text">LINK</span></div>
+          <button class="btn btn-sm" id="btn-logout">LOGOUT</button>
+        </div>
+      </header>
+      <div class="d-rule"></div>
+
+      <div id="d-banner" class="d-banner" hidden></div>
+
+      <div class="d-grid">
+
+        <!-- COL 1: System Telemetry + Oscilloscope + RTOS Health -->
+        <div class="d-col">
+
+          <!-- System Telemetry -->
+          <div class="mod" id="mod-sys">
+            <div class="mod-title"><span class="mod-led led-pulse"></span>SYSTEM TELEMETRY</div>
+            <dl class="kv">
+              <dt>UPTIME</dt><dd data-k="uptime">--</dd>
+              <dt>HEAP FREE</dt><dd data-k="heap">--</dd>
+              <dt>HEAP MIN</dt><dd data-k="heap-min">--</dd>
+              <dt>HEAP FRAG</dt><dd data-k="heap-frag">--</dd>
+              <dt>CHIP TEMP</dt><dd data-k="temp">--</dd>
+              <dt>WS CLIENTS</dt><dd data-k="ws-clients">--</dd>
+              <dt>TEL WATERMARK</dt><dd data-k="watermark">--</dd>
+            </dl>
+          </div>
+
+          <!-- FreeRTOS & Memory Health Card -->
+          <div class="mod" id="mod-rtos">
+            <div class="mod-title"><span class="mod-led led-pulse led-amber"></span>FREERTOS &amp; MEMORY HEALTH</div>
+            <dl class="kv">
+              <dt>CORE 0 NET TASK</dt><dd data-k="net-watermark">-- B</dd>
+              <dt>CORE 1 TEL TASK</dt><dd data-k="tel-watermark">-- B</dd>
+              <dt>HEAP FRAGMENT</dt><dd data-k="rtos-frag">--</dd>
+              <dt>CPU FREQUENCY</dt><dd data-k="rtos-cpu">240 MHz</dd>
+            </dl>
+            <div class="fs-bar-wrap">
+              <div class="fs-bar-meta">
+                <span>LITTLEFS STORAGE</span>
+                <span id="fs-meta-text">-- / -- KB</span>
+              </div>
+              <div class="fs-bar-track">
+                <div class="fs-bar-fill" id="fs-bar-fill" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Oscilloscope -->
+          <div class="mod" id="mod-osc">
+            <div class="mod-title"><span class="mod-led led-pulse led-amber"></span>OSCILLOSCOPE RETICLE</div>
+            <div class="osc-container">
+              <canvas id="telemetry-chart" aria-label="Telemetry oscilloscope"></canvas>
+            </div>
+            <div class="osc-legend">
+              <span class="osc-leg osc-leg-heap">&#9632; HEAP</span>
+              <span class="osc-leg osc-leg-temp">&#9632; TEMP</span>
+              <span class="osc-leg osc-leg-clients">&#9632; CLIENTS</span>
+            </div>
+          </div>
+
+          <!-- WiFi -->
+          <div class="mod" id="mod-wifi">
+            <div class="mod-title"><span class="mod-led led-pulse"></span>WI-FI ACCESS POINT</div>
+            <dl class="kv">
+              <dt>SSID</dt><dd data-k="w-ssid">--</dd>
+              <dt>IP</dt><dd data-k="w-ip">--</dd>
+              <dt>CHANNEL</dt><dd data-k="w-ch">--</dd>
+              <dt>CLIENTS</dt><dd data-k="w-clients">--</dd>
+              <dt>TX LEVEL</dt><dd data-k="w-tx">--</dd>
+            </dl>
+            <div class="prompt sub">vectron@esp32:~$ <span>wifi --txpower</span></div>
+            <div class="chips" id="tx-chips">
+              <button class="chip" data-level="0">[LOW 8.5dBm]</button>
+              <button class="chip" data-level="1">[MED 13dBm]</button>
+              <button class="chip" data-level="2">[HIGH 19.5dBm]</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- COL 2: GPIO + I2C + Controls -->
+        <div class="d-col">
+
+          <!-- GPIO Outputs -->
+          <div class="mod" id="mod-gpio-out">
+            <div class="mod-title"><span class="mod-led led-pulse led-amber"></span>GPIO OUTPUTS</div>
+            <div id="gpio-outputs" class="gpio-list">
+              <div class="gpio-empty">Waiting for telemetry&hellip;</div>
+            </div>
+          </div>
+
+          <!-- GPIO Inputs -->
+          <div class="mod" id="mod-gpio-in">
+            <div class="mod-title"><span class="mod-led led-pulse"></span>GPIO INPUTS</div>
+            <div id="gpio-inputs" class="gpio-list">
+              <div class="gpio-empty">Waiting for telemetry&hellip;</div>
+            </div>
+          </div>
+
+          <!-- I2C Bus Map -->
+          <div class="mod" id="mod-i2c">
+            <div class="mod-title"><span class="mod-led led-pulse"></span>I2C BUS MAP</div>
+            <div class="i2c-meta" id="i2c-meta">SDA — / SCL —</div>
+            <div id="i2c-map" class="i2c-map">
+              <div class="gpio-empty">Waiting for telemetry&hellip;</div>
+            </div>
+            <div class="i2c-actions">
+              <button class="btn" id="btn-i2c">[ SCAN BUS ]</button>
+              <span class="i2c-state" id="i2c-state"></span>
+            </div>
+          </div>
+
+          <!-- BLE -->
+          <div class="mod" id="mod-ble">
+            <div class="mod-title"><span class="mod-led led-pulse"></span>BLUETOOTH LE</div>
+            <dl class="kv">
+              <dt>DEVICE</dt><dd data-k="ble-name">--</dd>
+              <dt>ADVERTISING</dt><dd data-k="ble-adv">--</dd>
+              <dt>CONNECTIONS</dt><dd data-k="ble-conn">--</dd>
+            </dl>
+          </div>
+
+        </div>
+
+        <!-- COL 3: Diagnostics + System Control + Readout -->
+        <div class="d-col d-col-right">
+
+          <!-- Live Readout -->
+          <div class="mod readout-mod">
+            <div class="ro-big" id="ro-uptime">00:00:00</div>
+            <div class="ro-small">UPTIME</div>
+            <div class="ro-line"><span>LINK</span><b id="ro-link">--</b></div>
+            <div class="ro-line"><span>WS STATE</span><b id="ro-ws-state">DISCONNECTED</b></div>
+            <div class="ro-line"><span>HEAP</span><b id="ro-heap">-- KB</b></div>
+            <div class="ro-line"><span>TEMP</span><b id="ro-temp">-- °C</b></div>
+          </div>
+
+          <!-- Diagnostics Console -->
+          <div class="mod" id="mod-diag">
+            <div class="mod-title"><span class="mod-led led-pulse led-amber"></span>DIAGNOSTICS CONSOLE</div>
+            <div class="diag-filters">
+              <button class="diag-filter active" data-filter="INFO">[INFO]</button>
+              <button class="diag-filter active" data-filter="WARN">[WARN]</button>
+              <button class="diag-filter active" data-filter="ERROR">[ERROR]</button>
+              <button class="diag-filter active" data-filter="BUS">[BUS]</button>
+            </div>
+            <div id="diag-console" class="diag-console"></div>
+          </div>
+
+          <!-- System Control -->
+          <div class="mod" id="mod-ctl">
+            <div class="mod-title"><span class="mod-led led-pulse led-red"></span>SYSTEM CONTROL</div>
+            <div class="prompt">vectron@esp32:~$ <span>reboot</span></div>
+            <div class="reboot-row">
+              <span class="yn" id="reboot-yn">[ y / n ]</span>
+              <button class="chip" id="btn-reboot-y">[y]</button>
+              <button class="chip" id="btn-reboot-n" hidden>[n]</button>
+            </div>
+            <div id="reboot-countdown" class="reboot-countdown" hidden></div>
+          </div>
+
+        </div>
+
+      </div><!-- /d-grid -->
+    </div><!-- /dash-frame -->
+  </section>
+
+</div><!-- /app -->
+
+<div class="creator-credit">
+  DEVELOPED BY DEBASHIS-SHARINGAN-21 | <a href="https://github.com/debashis-sharingan-21/vectron-32" target="_blank" rel="noopener noreferrer">GITHUB: @debashis-sharingan-21</a>
+</div>
+
+<div class="crt" aria-hidden="true"></div>
+<script src="script.js"></script>
+</body>
+</html>

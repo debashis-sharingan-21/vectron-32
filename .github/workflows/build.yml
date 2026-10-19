@@ -1,0 +1,85 @@
+name: VECTRON-32 ESP32 CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build Firmware & LittleFS
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        environment: [ esp32dev ]
+
+    steps:
+      # ── Checkout ──────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Python setup ──────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # ── PlatformIO cache ──────────────────────────────────
+      - name: Cache PlatformIO packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio/.cache
+            ~/.platformio/packages
+            ~/.platformio/platforms
+          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+          restore-keys: |
+            pio-${{ runner.os }}-
+
+      # ── Install PlatformIO ────────────────────────────────
+      - name: Install PlatformIO Core
+        run: |
+          pip install --upgrade pip
+          pip install platformio
+
+      # ── Step 1: Build firmware ────────────────────────────
+      - name: Build firmware (${{ matrix.environment }})
+        run: pio run -e ${{ matrix.environment }}
+
+      # ── Step 2: Build LittleFS image ─────────────────────
+      - name: Build LittleFS filesystem image
+        run: pio run -e ${{ matrix.environment }} --target buildfs
+
+      # ── Step 3: Check firmware binary size ────────────────
+      - name: Check firmware binary size
+        run: |
+          FIRMWARE_PATH=".pio/build/${{ matrix.environment }}/firmware.bin"
+          if [ ! -f "$FIRMWARE_PATH" ]; then
+            echo "::error::firmware.bin not found at $FIRMWARE_PATH"
+            exit 1
+          fi
+          SIZE=$(stat -c%s "$FIRMWARE_PATH")
+          SIZE_MB=$(echo "scale=2; $SIZE / 1048576" | bc)
+          echo "Firmware size: ${SIZE} bytes (${SIZE_MB} MB)"
+          if [ "$SIZE" -gt 3145728 ]; then
+            echo "::warning::Firmware binary exceeds 3 MB (${SIZE_MB} MB). Consider enabling OTA partition or reducing lib deps."
+          else
+            echo "::notice::Firmware size is within limit: ${SIZE_MB} MB"
+          fi
+
+      # ── Step 4: Upload build artifacts ───────────────────
+      - name: Upload firmware.bin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vectron-firmware-${{ matrix.environment }}-${{ github.sha }}
+          path: .pio/build/${{ matrix.environment }}/firmware.bin
+          retention-days: 30
+
+      - name: Upload littlefs.bin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vectron-littlefs-${{ matrix.environment }}-${{ github.sha }}
+          path: .pio/build/${{ matrix.environment }}/littlefs.bin
+          retention-days: 30
